@@ -1,71 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using SqlConnectionStringBuilder = Microsoft.Data.SqlClient.SqlConnectionStringBuilder;
-
-
 
 namespace Marconnes.ConsoleApp
 {
     public class DAL
     {
         private readonly string _connectionString =
-    "Server=.;Database=Band;Trusted_Connection=True;TrustServerCertificate=True;";
+            "Server=.;Database=MarconnesDB;Trusted_Connection=True;TrustServerCertificate=True;";
 
-        // GET ALL
-        public List<Band> GetAllBands()
+        // 1. GET ALL ROOMS
+        public List<HotelRoom> GetAllRooms()
         {
-            var bands = new List<Band>();
+            var rooms = new List<HotelRoom>();
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "SELECT Id, Name, Genre FROM Bands";
+                // SQL: Selecteer de juiste kolommen uit de Rooms tabel
+                string sql = "SELECT RoomID, RoomNumber, MaxGuests, Price FROM HotelRooms";
+
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        bands.Add(new Band
+                        rooms.Add(new HotelRoom
                         {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            Genre = reader.GetString(2)
+                            // Lees de data uit de database en stop het in een Room object
+                            RoomID = reader.GetInt32(0),
+                            RoomNumber = reader.GetString(1),
+                            MaxGuests = reader.GetInt32(2),
+                            Price = reader.GetDecimal(3) // Belangrijk: Decimal voor de prijs
                         });
                     }
                 }
             }
 
-            return bands;
+            return rooms;
         }
-        // ADD
-        public void AddBand(Band band)
+
+        // 2. ADD ROOM
+        public void AddHotelRoom(HotelRoom room)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "INSERT INTO Bands (Name, Genre) VALUES (@Name, @Genre)";
+                // SQL: Voeg een nieuwe kamer toe. RoomID hoeft niet (is Identity).
+                string sql = "INSERT INTO HotelRooms (RoomNumber, MaxGuests, Price) VALUES (@RoomNumber, @MaxGuests, @Price)";
+
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Name", band.Name);
-                    cmd.Parameters.AddWithValue("@Genre", band.Genre);
+                    cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
+                    cmd.Parameters.AddWithValue("@MaxGuests", room.MaxGuests);
+                    cmd.Parameters.AddWithValue("@Price", room.Price);
+
                     cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        // GETBANDBYID
-        public Band? GetBandById(int id)
+        // 3. GET ROOM BY ID
+        public HotelRoom? GetRoomById(int id)
         {
-            Band? band = null;
+            HotelRoom? room = null;
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "SELECT Id, Name, Genre FROM Bands WHERE Id = @Id";
+                string sql = "SELECT RoomID, RoomNumber, MaxGuests, Price FROM HotelRooms WHERE RoomID = @Id";
+
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", id);
@@ -74,45 +78,49 @@ namespace Marconnes.ConsoleApp
                     {
                         if (reader.Read())
                         {
-                            band = new Band
+                            room = new HotelRoom
                             {
-                                Id = reader.GetInt32(0),
-                                Name = reader.GetString(1),
-                                Genre = reader.GetString(2)
+                                RoomID = reader.GetInt32(0),
+                                RoomNumber = reader.GetString(1),
+                                MaxGuests = reader.GetInt32(2),
+                                Price = reader.GetDecimal(3)
                             };
                         }
                     }
                 }
             }
 
-            return band;
+            return room;
         }
 
-
-        // UPDATE
-        public void UpdateBand(Band band)
+        // 4. UPDATE ROOM
+        public void UpdateRoom(HotelRoom room)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "UPDATE Bands SET Name = @Name, Genre = @Genre WHERE Id = @Id";
+                string sql = "UPDATE HotelRooms SET RoomNumber = @RoomNumber, MaxGuests = @MaxGuests, Price = @Price WHERE RoomID = @Id";
+
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Name", band.Name);
-                    cmd.Parameters.AddWithValue("@Genre", band.Genre);
-                    cmd.Parameters.AddWithValue("@Id", band.Id);
+                    cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
+                    cmd.Parameters.AddWithValue("@MaxGuests", room.MaxGuests);
+                    cmd.Parameters.AddWithValue("@Price", room.Price);
+                    cmd.Parameters.AddWithValue("@Id", room.RoomID); // Gebruik de ID om de juiste te updaten
+
                     cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        // DELETE
-        public void DeleteBand(int id)
+        // 5. DELETE ROOM
+        public void DeleteRoom(int id)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "DELETE FROM Bands WHERE Id = @Id";
+                string sql = "DELETE FROM HotelRooms WHERE RoomID = @Id";
+
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", id);
@@ -120,6 +128,5 @@ namespace Marconnes.ConsoleApp
                 }
             }
         }
-
     }
 }
