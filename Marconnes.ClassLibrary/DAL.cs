@@ -17,7 +17,6 @@ namespace Marconnes.ConsoleApp
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                // SQL: Selecteer de juiste kolommen uit de Rooms tabel
                 string sql = "SELECT RoomID, RoomNumber, MaxGuests, Price FROM HotelRooms";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
@@ -27,11 +26,10 @@ namespace Marconnes.ConsoleApp
                     {
                         rooms.Add(new HotelRoom
                         {
-                            // Lees de data uit de database en stop het in een Room object
                             RoomID = reader.GetInt32(0),
                             RoomNumber = reader.GetString(1),
                             MaxGuests = reader.GetInt32(2),
-                            Price = reader.GetDecimal(3) // Belangrijk: Decimal voor de prijs
+                            Price = reader.GetDecimal(3)
                         });
                     }
                 }
@@ -46,7 +44,6 @@ namespace Marconnes.ConsoleApp
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                // SQL: Voeg een nieuwe kamer toe. RoomID hoeft niet (is Identity).
                 string sql = "INSERT INTO HotelRooms (RoomNumber, MaxGuests, Price) VALUES (@RoomNumber, @MaxGuests, @Price)";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
@@ -106,7 +103,7 @@ namespace Marconnes.ConsoleApp
                     cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
                     cmd.Parameters.AddWithValue("@MaxGuests", room.MaxGuests);
                     cmd.Parameters.AddWithValue("@Price", room.Price);
-                    cmd.Parameters.AddWithValue("@Id", room.RoomID); // Gebruik de ID om de juiste te updaten
+                    cmd.Parameters.AddWithValue("@Id", room.RoomID);
 
                     cmd.ExecuteNonQuery();
                 }

@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Marconnes.ConsoleApp; // Zorg dat dit verwijst naar je DAL en Room class
+using Marconnes.ConsoleApp;
 
 namespace Marconnes.Api.Controllers
 {
     [ApiController]
-    // De URL wordt nu automatisch: /api/HotelRoom
     [Route("api/[controller]")]
     public class HotelRoomController : ControllerBase
     {
@@ -19,7 +18,6 @@ namespace Marconnes.Api.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            // We roepen de methode uit je DAL aan
             var rooms = _dal.GetAllRooms();
             return Ok(rooms);
         }
@@ -48,7 +46,6 @@ namespace Marconnes.Api.Controllers
         [HttpPut("{id}")]
         public IActionResult Update(int id, HotelRoom room)
         {
-            // Check of de ID in de URL klopt met het object
             if (id != room.RoomID)
             {
                 return BadRequest("ID matcht niet");
