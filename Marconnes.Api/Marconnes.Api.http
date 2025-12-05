@@ -1,0 +1,6 @@
+@Marconnes.Api_HostAddress = http://localhost:5284
+
+GET {{Marconnes.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
