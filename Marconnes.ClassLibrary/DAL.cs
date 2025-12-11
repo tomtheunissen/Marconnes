@@ -48,6 +48,7 @@ namespace Marconnes.ConsoleApp
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
+
                     cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
                     cmd.Parameters.AddWithValue("@MaxGuests", room.MaxGuests);
                     cmd.Parameters.AddWithValue("@Price", room.Price);
