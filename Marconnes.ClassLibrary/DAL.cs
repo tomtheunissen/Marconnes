@@ -66,7 +66,6 @@ namespace Marconnes.ConsoleApp
             return Places;
         }
 
-
         // 2. ADD ROOM
         public void AddHotelRoom(HotelRoom room)
         {
