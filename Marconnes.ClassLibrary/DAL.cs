@@ -8,7 +8,7 @@ namespace Marconnes.ConsoleApp
     public class DAL
     {
         private readonly string _connectionString =
-            "Data Source=localhost;Initial Catalog=Marconnes_N;Integrated Security=True;Trust Server Certificate=True;";
+        "Data Source=marconnes-db.database.windows.net;Initial Catalog=Marconnes;Persist Security Info=True;User ID=projectadmin;Password=Goed-W8achtwoord;Trust Server Certificate=True";
 
         // 1. GET ALL ROOMS
         public List<HotelRoom> GetAllRooms()
