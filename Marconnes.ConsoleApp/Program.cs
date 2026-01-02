@@ -55,9 +55,9 @@
         static void Main(string[] args)
         {
             Console.WriteLine(@"Typ:
--'addRoom'  to add a new hotelroom.
--'addPlace' to add a new campingplace.
--'view' to view all rooms.");
+                -'addRoom'  to add a new hotelroom.
+                -'addPlace' to add a new campingplace.
+                -'view' to view all rooms.");
             string command = Console.ReadLine();
             if (command == "addRoom")
             {
