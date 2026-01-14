@@ -1,0 +1,6 @@
+@CampingEF_HostAddress = http://localhost:5208
+
+GET {{CampingEF_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
