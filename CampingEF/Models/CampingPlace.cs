@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CampingEF.Models;
 
-public partial class CampingPlace
+public class CampingPlace
 {
     public int PlaceId { get; set; }
 
