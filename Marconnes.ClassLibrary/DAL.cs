@@ -49,42 +49,6 @@ namespace Marconnes.ConsoleApp
             return rooms;
         }
 
-        public List<CampingPlace> GetAllPlaces()
-        {
-            var Places = new List<CampingPlace>();
-
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string sql = "SELECT * FROM CampingPlaces";
-
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        Places.Add(new CampingPlace
-                        {
-                            PlaceID = (int)reader["PlaceID"],
-                            PlaceNumber = reader["PlaceNumber"].ToString(),
-                            MaxGuests = (int)reader["MaxGuests"],
-                            Price = (decimal)reader["Price"],
-                            HasElectricity = reader["HasElectricity"] != DBNull.Value ? (bool)reader["HasElectricity"] : false,
-                            Ampere = reader["Ampere"] != DBNull.Value ? (int)reader["Ampere"] : 0,
-                            HasWaterConnection = reader["HasWaterConnection"] != DBNull.Value ? (bool)reader["HasWaterConnection"] : false,
-                            HasSewageDrain = reader["HasSewageDrain"] != DBNull.Value ? (bool)reader["HasSewageDrain"] : false,
-                            SurfaceArea = reader["SurfaceArea"] != DBNull.Value ? (int)reader["SurfaceArea"] : 0,
-                            GroundType = reader["GroundType"] != DBNull.Value ? reader["GroundType"].ToString() : "",
-                            IsShaded = reader["IsShaded"] != DBNull.Value ? (bool)reader["IsShaded"] : false,
-                            IsCarAllowed = reader["IsCarAllowed"] != DBNull.Value ? (bool)reader["IsCarAllowed"] : false,
-                            ArePetsAllowed = reader["ArePetsAllowed"] != DBNull.Value ? (bool)reader["ArePetsAllowed"] : false
-                        });
-                    }
-                }
-            }
-
-            return Places;
-        }
 
         // 2. ADD ROOM
         public void AddHotelRoom(HotelRoom room)
@@ -117,35 +81,7 @@ namespace Marconnes.ConsoleApp
                 }
             }
         }
-        public void AddCampingPlace(CampingPlace Place)
-        {
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string sql = @"INSERT INTO CampingPlaces 
-                               (PlaceNumber, MaxGuests, Price, HasElectricity, Ampere, HasWaterConnection, HasSewageDrain, SurfaceArea, GroundType, IsShaded, IsCarAllowed, ArePetsAllowed) 
-                               VALUES 
-                               (@PlaceNumber, @MaxGuests, @Price, @HasElectricity, @Ampere, @HasWaterConnection, @HasSewageDrain, @SurfaceArea, @GroundType, @IsShaded, @IsCarAllowed, @ArePetsAllowed)";
 
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@PlaceNumber", Place.PlaceNumber);
-                    cmd.Parameters.AddWithValue("@MaxGuests", Place.MaxGuests);
-                    cmd.Parameters.AddWithValue("@Price", Place.Price);
-                    cmd.Parameters.AddWithValue("@HasElectricity", Place.HasElectricity);
-                    cmd.Parameters.AddWithValue("@Ampere", Place.Ampere);
-                    cmd.Parameters.AddWithValue("@HasWaterConnection", Place.HasWaterConnection);
-                    cmd.Parameters.AddWithValue("@HasSewageDrain", Place.HasSewageDrain);
-                    cmd.Parameters.AddWithValue("@SurfaceArea", Place.SurfaceArea);
-                    cmd.Parameters.AddWithValue("@GroundType", (object)Place.GroundType ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@IsShaded", Place.IsShaded);
-                    cmd.Parameters.AddWithValue("@IsCarAllowed", Place.IsCarAllowed);
-                    cmd.Parameters.AddWithValue("@ArePetsAllowed", Place.ArePetsAllowed);
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
 
         // 3. GET ROOM BY ID
         public HotelRoom? GetRoomById(int id)
@@ -189,46 +125,6 @@ namespace Marconnes.ConsoleApp
 
             return room;
         }
-        public CampingPlace? GetPlaceById(int id)
-        {
-            CampingPlace? Place = null;
-
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string sql = "SELECT * FROM CampingPlaces WHERE PlaceID = @Id";
-
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@Id", id);
-
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            Place = new CampingPlace
-                            {
-                                PlaceID = (int)reader["PlaceID"],
-                                PlaceNumber = reader["PlaceNumber"].ToString(),
-                                MaxGuests = (int)reader["MaxGuests"],
-                                Price = (decimal)reader["Price"],
-                                HasElectricity = reader["HasElectricity"] != DBNull.Value ? (bool)reader["HasElectricity"] : false,
-                                Ampere = reader["Ampere"] != DBNull.Value ? (int)reader["Ampere"] : 0,
-                                HasWaterConnection = reader["HasWaterConnection"] != DBNull.Value ? (bool)reader["HasWaterConnection"] : false,
-                                HasSewageDrain = reader["HasSewageDrain"] != DBNull.Value ? (bool)reader["HasSewageDrain"] : false,
-                                SurfaceArea = reader["SurfaceArea"] != DBNull.Value ? (int)reader["SurfaceArea"] : 0,
-                                GroundType = reader["GroundType"] != DBNull.Value ? reader["GroundType"].ToString() : "",
-                                IsShaded = reader["IsShaded"] != DBNull.Value ? (bool)reader["IsShaded"] : false,
-                                IsCarAllowed = reader["IsCarAllowed"] != DBNull.Value ? (bool)reader["IsCarAllowed"] : false,
-                                ArePetsAllowed = reader["ArePetsAllowed"] != DBNull.Value ? (bool)reader["ArePetsAllowed"] : false
-                            };
-                        }
-                    }
-                }
-            }
-
-            return Place;
-        }
 
         // 4. UPDATE ROOM
         public void UpdateRoom(HotelRoom room)
@@ -264,38 +160,6 @@ namespace Marconnes.ConsoleApp
                 }
             }
         }
-        public void UpdatePlace(CampingPlace Place)
-        {
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string sql = @"UPDATE CampingPlaces SET 
-                               PlaceNumber = @PlaceNumber, MaxGuests = @MaxGuests, Price = @Price,
-                               HasElectricity = @HasElectricity, Ampere = @Ampere, HasWaterConnection = @HasWaterConnection, 
-                               HasSewageDrain = @HasSewageDrain, SurfaceArea = @SurfaceArea, GroundType = @GroundType, 
-                               IsShaded = @IsShaded, IsCarAllowed = @IsCarAllowed, ArePetsAllowed = @ArePetsAllowed
-                               WHERE PlaceID = @Id";
-
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@PlaceNumber", Place.PlaceNumber);
-                    cmd.Parameters.AddWithValue("@MaxGuests", Place.MaxGuests);
-                    cmd.Parameters.AddWithValue("@Price", Place.Price);
-                    cmd.Parameters.AddWithValue("@HasElectricity", Place.HasElectricity);
-                    cmd.Parameters.AddWithValue("@Ampere", Place.Ampere);
-                    cmd.Parameters.AddWithValue("@HasWaterConnection", Place.HasWaterConnection);
-                    cmd.Parameters.AddWithValue("@HasSewageDrain", Place.HasSewageDrain);
-                    cmd.Parameters.AddWithValue("@SurfaceArea", Place.SurfaceArea);
-                    cmd.Parameters.AddWithValue("@GroundType", (object)Place.GroundType ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@IsShaded", Place.IsShaded);
-                    cmd.Parameters.AddWithValue("@IsCarAllowed", Place.IsCarAllowed);
-                    cmd.Parameters.AddWithValue("@ArePetsAllowed", Place.ArePetsAllowed);
-                    cmd.Parameters.AddWithValue("@Id", Place.PlaceID);
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
 
         // 5. DELETE ROOM
         public void DeleteRoom(int id)
@@ -304,20 +168,6 @@ namespace Marconnes.ConsoleApp
             {
                 conn.Open();
                 string sql = "DELETE FROM HotelRooms WHERE RoomID = @Id";
-
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@Id", id);
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
-        public void DeletePlace(int id)
-        {
-            using (SqlConnection conn = new SqlConnection(_connectionString))
-            {
-                conn.Open();
-                string sql = "DELETE FROM CampingPlaces WHERE PlaceID = @Id";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
