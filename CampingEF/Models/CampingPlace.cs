@@ -3,11 +3,9 @@ using System.Collections.Generic;
 
 namespace CampingEF.Models;
 
-public class CampingPlace
+public partial class CampingPlace
 {
-    public int PlaceId { get; set; }
-
-    public string PlaceNumber { get; set; } = null!;
+    public int PlaceNumber { get; set; }
 
     public int MaxGuests { get; set; }
 
@@ -30,4 +28,6 @@ public class CampingPlace
     public bool? IsCarAllowed { get; set; }
 
     public bool? ArePetsAllowed { get; set; }
+
+    public virtual ICollection<Reserveringen> Reserveringens { get; set; } = new List<Reserveringen>();
 }
