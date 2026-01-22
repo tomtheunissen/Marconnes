@@ -18,7 +18,10 @@ namespace CampingEF.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CampingPlace>>> GetAlles()
         {
-            return await _context.CampingPlaces.ToListAsync();
+            return await _context.CampingPlaces
+    .Include(c => c.Reserveringens)
+    .ThenInclude(r => r.Gebruiker)
+    .ToListAsync();
         }
 
         // 4. WIJZIGEN (Update)
