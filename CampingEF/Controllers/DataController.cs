@@ -25,7 +25,7 @@ namespace CampingEF.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Wijzigen(int id, CampingPlace gewijzigdePlek)
         {
-            if (id != gewijzigdePlek.PlaceId)
+            if (id != gewijzigdePlek.PlaceNumber)
             {
                 return BadRequest("Het ID in de URL matcht niet met het ID in de data.");
             }
@@ -38,7 +38,7 @@ namespace CampingEF.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                bool bestaatNog = _context.CampingPlaces.Any(e => e.PlaceId == id);
+                bool bestaatNog = _context.CampingPlaces.Any(e => e.PlaceNumber == id);
 
                 if (!bestaatNog)
                 {
@@ -72,7 +72,7 @@ namespace CampingEF.Controllers
         public async Task<ActionResult<IEnumerable<CampingPlace>>> ZoekOpNummer(string plekNummer)
         {
             var resultaten = await _context.CampingPlaces
-                .Where(p => p.PlaceNumber.Contains(plekNummer))
+                .Where(p => p.PlaceNumber.ToString().Contains(plekNummer))
                 .ToListAsync();
 
             if (resultaten == null || resultaten.Count == 0)
@@ -86,12 +86,12 @@ namespace CampingEF.Controllers
         [HttpPost]
         public async Task<ActionResult<CampingPlace>> Toevoegen(CampingPlace nieuwePlek)
         {
-            nieuwePlek.PlaceId = 0;
+            nieuwePlek.PlaceNumber = 0;
 
             _context.CampingPlaces.Add(nieuwePlek);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAlles), new { id = nieuwePlek.PlaceId }, nieuwePlek);
+            return CreatedAtAction(nameof(GetAlles), new { id = nieuwePlek.PlaceNumber }, nieuwePlek);
         }
     }
 }
