@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Orchestrator.ApiConnector;
 using System.Reflection.Metadata.Ecma335;
 
 namespace Orchestrator.Controllers
@@ -8,6 +9,39 @@ namespace Orchestrator.Controllers
     [ApiController]
     public class OrchestratorController : ControllerBase
     {
-        
+        private readonly OrchService _service;
+
+        public OrchestratorController(OrchService service)
+        {
+            _service = service;
+        }
+
+        //Endpoint
+        [HttpGet("hotel")]
+        public async Task<IActionResult> GetHotel()
+        {
+            var data = await _service.GetHotelData();
+            return Ok(data);
+        }
+
+        [HttpGet("camping")]
+        public async Task<IActionResult> GetCamping()
+        {
+            var data = await _service.GetCampingData();
+            return Ok(data);
+        }
+
+        [HttpGet("combined")]
+        public async Task<IActionResult> GetCombined()
+        {
+            var hotel = await _service.GetHotelData();
+            var camping = await _service.GetCampingData();
+
+            return Ok(new
+            {
+                Hotel = hotel,
+                Camping = camping
+            });
+        }
     }
 }
