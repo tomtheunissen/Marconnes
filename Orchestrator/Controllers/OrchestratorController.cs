@@ -31,6 +31,21 @@ namespace Orchestrator.Controllers
             return Ok(data);
         }
 
+        [HttpGet("Search")]
+        public async Task<IActionResult> GetSearch([FromQuery] int zoekterm)
+        {
+            var hotelSearch = await _service.GetHotelData(zoekterm);
+            var campingSearch = await _service.GetCampingData(zoekterm);
+
+            // 3. Geef beide resultaten terug
+            return Ok(new
+            {
+                Hotel = hotelSearch,
+                Camping = campingSearch
+            });
+        }
+
+
         [HttpGet("combined")]
         public async Task<IActionResult> GetCombined()
         {
