@@ -15,7 +15,7 @@ namespace CampingEF.Controllers
             _context = context;
         }
 
-        [HttpGet]
+        [HttpGet("all/{CampingPlace}")]
         public async Task<ActionResult<IEnumerable<CampingPlace>>> GetAlles()
         {
             return await _context.CampingPlaces
@@ -25,10 +25,10 @@ namespace CampingEF.Controllers
         }
 
         // 4. WIJZIGEN (Update)
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Wijzigen(int id, CampingPlace gewijzigdePlek)
+        [HttpPut("update/{PlekNummer}")]
+        public async Task<IActionResult> Wijzigen(int PlekNummer, CampingPlace gewijzigdePlek)
         {
-            if (id != gewijzigdePlek.PlaceNumber)
+            if (PlekNummer != gewijzigdePlek.PlaceNumber)
             {
                 return BadRequest("Het ID in de URL matcht niet met het ID in de data.");
             }
@@ -41,7 +41,7 @@ namespace CampingEF.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                bool bestaatNog = _context.CampingPlaces.Any(e => e.PlaceNumber == id);
+                bool bestaatNog = _context.CampingPlaces.Any(e => e.PlaceNumber == PlekNummer);
 
                 if (!bestaatNog)
                 {
@@ -56,22 +56,8 @@ namespace CampingEF.Controllers
             return NoContent();
         }
 
-        // 5. OPHALEN OP ID (Details)
-        [HttpGet("{id}")]
-        public async Task<ActionResult<CampingPlace>> GetOpId(int id)
-        {
-            var plek = await _context.CampingPlaces.FindAsync(id);
-
-            if (plek == null)
-            {
-                return NotFound();
-            }
-
-            return plek;
-        }
-
         // 6. ZOEKEN OP PLEKNUMMER (Tekst, bijv. "A12" of "B01")
-        [HttpGet("zoek/{plekNummer}")]
+        [HttpGet("zoek/{PlekNummer}")]
         public async Task<ActionResult<IEnumerable<CampingPlace>>> ZoekOpNummer(string plekNummer)
         {
             var resultaten = await _context.CampingPlaces
@@ -86,7 +72,7 @@ namespace CampingEF.Controllers
             return resultaten;
         }
 
-        [HttpPost("campingplek")]
+        [HttpPost("update/{PlekNummer}")]
         public async Task<ActionResult<CampingPlace>> Toevoegen(CampingPlace nieuwePlek)
         {
             nieuwePlek.PlaceNumber = 0;
@@ -97,7 +83,7 @@ namespace CampingEF.Controllers
             return CreatedAtAction(nameof(GetAlles), new { id = nieuwePlek.PlaceNumber }, nieuwePlek);
         }
 
-        [HttpGet("reserveringen")]
+        [HttpGet("all/{Reserveringen}")]
         public async Task<ActionResult<IEnumerable<Reserveringen>>> GetReserveringen()
         {
             return await _context.Reserveringens
@@ -107,7 +93,7 @@ namespace CampingEF.Controllers
         }
 
         // In Camping API -> Controllers -> ReserveringenController.cs
-        [HttpPost("add_reserveringen")]
+        [HttpPost("add/{Reserveringen}")]
         public async Task<ActionResult<Reserveringen>> PostReservering(Reserveringen reservering)
         {
             // Voeg toe aan database
@@ -136,6 +122,47 @@ namespace CampingEF.Controllers
 
             // 4. Geef NoContent (204) terug, dit is standaard voor een succesvolle delete
             return NoContent();
+        }
+
+        [HttpGet("gebruikers")]
+        public async Task<ActionResult<IEnumerable<Gebruiker>>> GetAllUsers()
+        {
+            return await _context.Gebruikers
+                // We laden direct alle gekoppelde data mee
+                .Include(u => u.Reserveringens)
+                    .ThenInclude(r => r.AccomodatieNavigation)
+                .ToListAsync();
+        }
+
+        // 1. ZOEKEN OP NAAM (Aangepast)
+        [HttpGet("zoek-gebruiker/{naamGebruiker}")]
+        public async Task<ActionResult<IEnumerable<Gebruiker>>> ZoekOpNaam(string naamGebruiker)
+        {
+            // WIJZIGING: Alleen zoeken in de kolom 'Naam'
+            var users = await _context.Gebruikers
+                .Include(u => u.Reserveringens)
+                .ThenInclude(r => r.AccomodatieNavigation)
+
+                .Where(u => u.Naam.Contains(naamGebruiker))
+                .ToListAsync();
+
+            if (users == null || !users.Any())
+            {
+                return NotFound("Geen gebruikers gevonden met deze naam.");
+            }
+
+            return users;
+        }
+
+        // 2. TOEVOEGEN (Aangepast)
+        [HttpPost("add/{gebruiker}")]
+        public async Task<ActionResult<Gebruiker>> Toevoegen(Gebruiker nieuweUser)
+        {
+            _context.Gebruikers.Add(nieuweUser);
+            await _context.SaveChangesAsync();
+
+            // WIJZIGING: Verwijzing naar 'nieuweUser.Naam'
+            return CreatedAtAction(nameof(ZoekOpNaam), new { gebruiker = nieuweUser.Naam }, nieuweUser);
         }
     }
 }

@@ -7,7 +7,7 @@ public partial class CampingPlace
 {
     public int PlaceNumber { get; set; }
 
-    public int MaxGuests { get; set; }
+    public int? MaxGuests { get; set; }
 
     public decimal Price { get; set; }
 
