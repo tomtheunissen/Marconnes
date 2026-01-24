@@ -58,5 +58,18 @@ namespace Orchestrator.Controllers
                 Camping = camping
             });
         }
+
+        [HttpGet("reserveringen")]
+        public async Task<IActionResult> GetReserveringen()
+        {
+            var data = await _service.GetAllReserveringen();
+
+            if (data == null)
+            {
+                return NotFound("Kon geen reserveringen ophalen.");
+            }
+
+            return Ok(data);
+        }
     }
 }

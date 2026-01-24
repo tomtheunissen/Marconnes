@@ -86,7 +86,7 @@ namespace CampingEF.Controllers
             return resultaten;
         }
 
-        [HttpPost]
+        [HttpPost("campingplek")]
         public async Task<ActionResult<CampingPlace>> Toevoegen(CampingPlace nieuwePlek)
         {
             nieuwePlek.PlaceNumber = 0;
@@ -95,6 +95,47 @@ namespace CampingEF.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetAlles), new { id = nieuwePlek.PlaceNumber }, nieuwePlek);
+        }
+
+        [HttpGet("reserveringen")]
+        public async Task<ActionResult<IEnumerable<Reserveringen>>> GetReserveringen()
+        {
+            return await _context.Reserveringens
+                .Include(r => r.AccomodatieNavigation)
+                .Include(r => r.Gebruiker)
+                .ToListAsync();
+        }
+
+        // In Camping API -> Controllers -> ReserveringenController.cs
+        [HttpPost("add_reserveringen")]
+        public async Task<ActionResult<Reserveringen>> PostReservering(Reserveringen reservering)
+        {
+            // Voeg toe aan database
+            _context.Reserveringens.Add(reservering);
+            await _context.SaveChangesAsync();
+
+            // Geef terug wat er is aangemaakt (standaard REST-regel)
+            return CreatedAtAction(nameof(GetReserveringen), new { reserveringId = reservering.ReserveringId }, reservering);
+        }
+
+        [HttpDelete("delete_reserveringen/{ReserveringId}")]
+        public async Task<IActionResult> DeleteReservering(int ReserveringId)
+        {
+            // 1. Zoek de reservering op basis van het ID
+            var reservering = await _context.Reserveringens.FindAsync(ReserveringId);
+
+            // 2. Als hij niet bestaat, geef NotFound terug
+            if (reservering == null)
+            {
+                return NotFound("Reservering niet gevonden.");
+            }
+
+            // 3. Verwijder uit de database en sla op
+            _context.Reserveringens.Remove(reservering);
+            await _context.SaveChangesAsync();
+
+            // 4. Geef NoContent (204) terug, dit is standaard voor een succesvolle delete
+            return NoContent();
         }
     }
 }

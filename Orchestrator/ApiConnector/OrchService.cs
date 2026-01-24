@@ -66,5 +66,22 @@ namespace Orchestrator.ApiConnector
 
             return await response.Content.ReadAsStringAsync();
         }
+
+        public async Task<string> GetAllReserveringen()
+        {
+            var client = _clientfactory.CreateClient("CampingAPI");
+
+            string url = "api/Reserveringen";
+
+            var response = await client.GetAsync(url);
+
+            // Check of het gelukt is
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadAsStringAsync();
+        }
     }
 }
