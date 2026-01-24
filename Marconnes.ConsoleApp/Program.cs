@@ -2,13 +2,13 @@
 {
     public class Program
     {
-        // AddRoomUser should be static and have a return type (void)
         public static void AddRoomUser()
         {
             HotelRoom room = new HotelRoom();
 
             Console.WriteLine("Wat is het kamernummer? (bijv. 101 of 2B)");
-            room.RoomNumber = Console.ReadLine();
+            string inputRoomNumber = Console.ReadLine();
+            room.RoomNumber = int.Parse(inputRoomNumber);
 
             Console.WriteLine("Hoeveel gasten mogen er maximaal in?");
             string inputGuests = Console.ReadLine();

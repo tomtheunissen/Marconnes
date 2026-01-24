@@ -27,8 +27,7 @@ namespace Marconnes.ConsoleApp
                     {
                         rooms.Add(new HotelRoom
                         {
-                            RoomID = (int)reader["RoomID"],
-                            RoomNumber = reader["RoomNumber"].ToString(),
+                            RoomNumber = (int)reader["RoomNumber"],
                             MaxGuests = (int)reader["MaxGuests"],
                             Price = (decimal)reader["Price"],
                             Floor = reader["Floor"] != DBNull.Value ? (int)reader["Floor"] : 0,
@@ -84,18 +83,18 @@ namespace Marconnes.ConsoleApp
 
 
         // 3. GET ROOM BY ID
-        public HotelRoom? GetRoomById(int id)
+        public HotelRoom? GetRoomById(int RoomNumber)
         {
             HotelRoom? room = null;
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "SELECT * FROM HotelRooms WHERE RoomID = @Id";
+                string sql = "SELECT * FROM HotelRooms WHERE RoomNumber = @RoomNumber";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.Parameters.AddWithValue("@RoomNumber", RoomNumber);
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
@@ -103,8 +102,7 @@ namespace Marconnes.ConsoleApp
                         {
                             room = new HotelRoom
                             {
-                                RoomID = (int)reader["RoomID"],
-                                RoomNumber = reader["RoomNumber"].ToString(),
+                                RoomNumber = (int)reader["RoomNumber"],
                                 MaxGuests = (int)reader["MaxGuests"],
                                 Price = (decimal)reader["Price"],
                                 Floor = reader["Floor"] != DBNull.Value ? (int)reader["Floor"] : 0,
@@ -133,11 +131,11 @@ namespace Marconnes.ConsoleApp
             {
                 conn.Open();
                 string sql = @"UPDATE HotelRooms SET 
-                               RoomNumber = @RoomNumber, MaxGuests = @MaxGuests, Price = @Price,
+                               MaxGuests = @MaxGuests, Price = @Price,
                                Floor = @Floor, SquareMeters = @SquareMeters, NumberOfBeds = @NumberOfBeds, IsDoubleBed = @IsDoubleBed,
                                HasAirConditioning = @HasAirConditioning, HasHeating = @HasHeating, HasWifi = @HasWifi, 
                                HasTelevision = @HasTelevision, IsWheelchairAccessible = @IsWheelchairAccessible, IsSmokingAllowed = @IsSmokingAllowed
-                               WHERE RoomID = @Id";
+                               WHERE RoomNumber = @RoomNumber";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
@@ -154,7 +152,6 @@ namespace Marconnes.ConsoleApp
                     cmd.Parameters.AddWithValue("@HasTelevision", room.HasTelevision);
                     cmd.Parameters.AddWithValue("@IsWheelchairAccessible", room.IsWheelchairAccessible);
                     cmd.Parameters.AddWithValue("@IsSmokingAllowed", room.IsSmokingAllowed);
-                    cmd.Parameters.AddWithValue("@Id", room.RoomID);
 
                     cmd.ExecuteNonQuery();
                 }
@@ -162,16 +159,16 @@ namespace Marconnes.ConsoleApp
         }
 
         // 5. DELETE ROOM
-        public void DeleteRoom(int id)
+        public void DeleteRoom(int RoomNumber)
         {
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string sql = "DELETE FROM HotelRooms WHERE RoomID = @Id";
+                string sql = "DELETE FROM HotelRooms WHERE RoomID = @RoomNumber";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.Parameters.AddWithValue("@RoomNumber", RoomNumber);
                     cmd.ExecuteNonQuery();
                 }
             }

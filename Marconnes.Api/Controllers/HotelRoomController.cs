@@ -22,11 +22,11 @@ namespace Marconnes.Api.Controllers
             return Ok(rooms);
         }
 
-        // 2. GET BY ID
-        [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        // 2. GET BY ROOM
+        [HttpGet("{RoomNumber}")]
+        public IActionResult GetById(int RoomNumber)
         {
-            var room = _dal.GetRoomById(id);
+            var room = _dal.GetRoomById(RoomNumber);
             if (room == null)
             {
                 return NotFound();
@@ -43,12 +43,12 @@ namespace Marconnes.Api.Controllers
         }
 
         // 4. UPDATE
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, HotelRoom room)
+        [HttpPut("{RoomNumber}")]
+        public IActionResult Update(int RoomNumber, HotelRoom room)
         {
-            if (id != room.RoomID)
+            if (RoomNumber != room.RoomNumber)
             {
-                return BadRequest("ID matcht niet");
+                return BadRequest("Kamernummer matcht niet");
             }
 
             _dal.UpdateRoom(room);
@@ -56,10 +56,10 @@ namespace Marconnes.Api.Controllers
         }
 
         // 5. DELETE
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [HttpDelete("{RoomNumber}")]
+        public IActionResult Delete(int RoomNumber)
         {
-            _dal.DeleteRoom(id);
+            _dal.DeleteRoom(RoomNumber);
             return NoContent();
         }
     }

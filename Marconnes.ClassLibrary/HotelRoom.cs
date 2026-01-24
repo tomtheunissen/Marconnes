@@ -8,8 +8,7 @@ namespace Marconnes.ConsoleApp
 {
     public class HotelRoom
     {
-        public int RoomID { get; set; }
-        public string? RoomNumber { get; set; }
+        public int RoomNumber { get; set; }
         public int MaxGuests { get; set; }
         public decimal Price { get; set; }
         public int Floor { get; set; }
@@ -22,7 +21,6 @@ namespace Marconnes.ConsoleApp
 
         public bool HasWifi { get; set; }
         public bool HasTelevision { get; set; }
-
         public bool IsWheelchairAccessible { get; set; }
         public bool IsSmokingAllowed { get; set; }
 
@@ -32,7 +30,7 @@ namespace Marconnes.ConsoleApp
         {
         }
 
-        public HotelRoom(string roomNumber, int maxGuests, decimal price)
+        public HotelRoom(int roomNumber, int maxGuests, decimal price)
         {
             RoomNumber = roomNumber;
             MaxGuests = maxGuests;
