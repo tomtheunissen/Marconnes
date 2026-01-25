@@ -15,23 +15,41 @@ namespace CampingEF.Controllers
             _context = context;
         }
 
-        [HttpGet("all/{CampingPlace}")]
+        // ==========================================
+        // CAMPING PLACES
+        // ==========================================
+
+        [HttpGet("all_Camping")]
         public async Task<ActionResult<IEnumerable<CampingPlace>>> GetAlles()
         {
             return await _context.CampingPlaces
-    .Include(c => c.Reserveringens)
-    .ThenInclude(r => r.Gebruiker)
-    .ToListAsync();
+                .Include(c => c.Reserveringens)
+                .ThenInclude(r => r.Gebruiker)
+                .ToListAsync();
         }
 
-        // 4. WIJZIGEN (Update)
+        [HttpGet("zoek/{PlekNummer:int}")]
+        public async Task<ActionResult<IEnumerable<CampingPlace>>> ZoekCampingPlek(int PlekNummer)
+        {
+            var resultaat = await _context.CampingPlaces
+                                          .Include(c => c.Reserveringens)
+                                          .ThenInclude(r => r.Gebruiker)
+                                          .Where(c => c.PlaceNumber == PlekNummer)
+                                          .ToListAsync();
+
+            if (resultaat == null || resultaat.Count == 0)
+            {
+                return NotFound($"Geen campingplek gevonden met nummer {PlekNummer}");
+            }
+
+            return Ok(resultaat);
+        }
+
         [HttpPut("update/{PlekNummer}")]
         public async Task<IActionResult> Wijzigen(int PlekNummer, CampingPlace gewijzigdePlek)
         {
             if (PlekNummer != gewijzigdePlek.PlaceNumber)
-            {
-                return BadRequest("Het ID in de URL matcht niet met het ID in de data.");
-            }
+                return BadRequest("ID matcht niet.");
 
             _context.Entry(gewijzigdePlek).State = EntityState.Modified;
 
@@ -41,49 +59,28 @@ namespace CampingEF.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                bool bestaatNog = _context.CampingPlaces.Any(e => e.PlaceNumber == PlekNummer);
-
-                if (!bestaatNog)
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw; 
-                }
+                if (!_context.CampingPlaces.Any(e => e.PlaceNumber == PlekNummer)) return NotFound();
+                else throw;
             }
 
             return NoContent();
         }
 
-        // 6. ZOEKEN OP PLEKNUMMER (Tekst, bijv. "A12" of "B01")
-        [HttpGet("zoek/{PlekNummer}")]
-        public async Task<ActionResult<IEnumerable<CampingPlace>>> ZoekOpNummer(string plekNummer)
-        {
-            var resultaten = await _context.CampingPlaces
-                .Where(p => p.PlaceNumber.ToString().Contains(plekNummer))
-                .ToListAsync();
-
-            if (resultaten == null || resultaten.Count == 0)
-            {
-                return NotFound("Geen plekken gevonden met dit nummer.");
-            }
-
-            return resultaten;
-        }
-
-        [HttpPost("update/{PlekNummer}")]
+        [HttpPost("add/camping")]
         public async Task<ActionResult<CampingPlace>> Toevoegen(CampingPlace nieuwePlek)
         {
             nieuwePlek.PlaceNumber = 0;
-
             _context.CampingPlaces.Add(nieuwePlek);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetAlles), new { id = nieuwePlek.PlaceNumber }, nieuwePlek);
         }
 
-        [HttpGet("all/{Reserveringen}")]
+        // ==========================================
+        // RESERVERINGEN
+        // ==========================================
+
+        [HttpGet("all_reserveringen")]
         public async Task<ActionResult<IEnumerable<Reserveringen>>> GetReserveringen()
         {
             return await _context.Reserveringens
@@ -92,76 +89,57 @@ namespace CampingEF.Controllers
                 .ToListAsync();
         }
 
-        // In Camping API -> Controllers -> ReserveringenController.cs
-        [HttpPost("add/{Reserveringen}")]
+        [HttpPost("add/reservering")]
         public async Task<ActionResult<Reserveringen>> PostReservering(Reserveringen reservering)
         {
-            // Voeg toe aan database
             _context.Reserveringens.Add(reservering);
             await _context.SaveChangesAsync();
-
-            // Geef terug wat er is aangemaakt (standaard REST-regel)
             return CreatedAtAction(nameof(GetReserveringen), new { reserveringId = reservering.ReserveringId }, reservering);
         }
 
         [HttpDelete("delete_reserveringen/{ReserveringId}")]
         public async Task<IActionResult> DeleteReservering(int ReserveringId)
         {
-            // 1. Zoek de reservering op basis van het ID
             var reservering = await _context.Reserveringens.FindAsync(ReserveringId);
+            if (reservering == null) return NotFound("Reservering niet gevonden.");
 
-            // 2. Als hij niet bestaat, geef NotFound terug
-            if (reservering == null)
-            {
-                return NotFound("Reservering niet gevonden.");
-            }
-
-            // 3. Verwijder uit de database en sla op
             _context.Reserveringens.Remove(reservering);
             await _context.SaveChangesAsync();
-
-            // 4. Geef NoContent (204) terug, dit is standaard voor een succesvolle delete
             return NoContent();
         }
 
-        [HttpGet("gebruikers")]
+        // ==========================================
+        // GEBRUIKERS
+        // ==========================================
+
+        [HttpGet("all_gebruikers")]
         public async Task<ActionResult<IEnumerable<Gebruiker>>> GetAllUsers()
         {
             return await _context.Gebruikers
-                // We laden direct alle gekoppelde data mee
                 .Include(u => u.Reserveringens)
                     .ThenInclude(r => r.AccomodatieNavigation)
                 .ToListAsync();
         }
 
-        // 1. ZOEKEN OP NAAM (Aangepast)
-        [HttpGet("zoek-gebruiker/{naamGebruiker}")]
+        [HttpGet("zoek/{naamGebruiker}")]
         public async Task<ActionResult<IEnumerable<Gebruiker>>> ZoekOpNaam(string naamGebruiker)
         {
-            // WIJZIGING: Alleen zoeken in de kolom 'Naam'
             var users = await _context.Gebruikers
                 .Include(u => u.Reserveringens)
                 .ThenInclude(r => r.AccomodatieNavigation)
-
                 .Where(u => u.Naam.Contains(naamGebruiker))
                 .ToListAsync();
 
-            if (users == null || !users.Any())
-            {
-                return NotFound("Geen gebruikers gevonden met deze naam.");
-            }
+            if (users == null || !users.Any()) return NotFound("Geen gebruikers gevonden.");
 
             return users;
         }
 
-        // 2. TOEVOEGEN (Aangepast)
-        [HttpPost("add/{gebruiker}")]
+        [HttpPost("add/gebruiker")]
         public async Task<ActionResult<Gebruiker>> Toevoegen(Gebruiker nieuweUser)
         {
             _context.Gebruikers.Add(nieuweUser);
             await _context.SaveChangesAsync();
-
-            // WIJZIGING: Verwijzing naar 'nieuweUser.Naam'
             return CreatedAtAction(nameof(ZoekOpNaam), new { gebruiker = nieuweUser.Naam }, nieuweUser);
         }
     }
