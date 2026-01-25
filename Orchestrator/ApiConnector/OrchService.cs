@@ -290,5 +290,39 @@ namespace Orchestrator.ApiConnector
 
             return await response.Content.ReadAsStringAsync();
         }
+
+        public async Task<bool> UpdateCampingPlek(int id, JsonObject campingData)
+        {
+            var client = _clientfactory.CreateClient("CampingAPI");
+
+            campingData["PlaceNumber"] = id;
+
+            var response = await client.PutAsJsonAsync($"api/Data/update/{id}", campingData);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteReservering(int id)
+        {
+            var client = _clientfactory.CreateClient("CampingAPI");
+
+            // Check de route in DataController: [HttpDelete("delete_reserveringen/{ReserveringId}")]
+            var response = await client.DeleteAsync($"api/Data/delete_reserveringen/{id}");
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> UpdateHotelKamer(int roomNumber, JsonObject hotelData)
+        {
+            var client = _clientfactory.CreateClient("HotelAPI");
+
+            // We zorgen dat het ID in de JSON gelijk is aan de URL (verplicht voor de PUT)
+            hotelData["RoomNumber"] = roomNumber;
+
+            // URL voorbeeld: api/HotelRoom/105
+            var response = await client.PutAsJsonAsync($"api/HotelRoom/{roomNumber}", hotelData);
+
+            return response.IsSuccessStatusCode;
+        }
     }
 }
