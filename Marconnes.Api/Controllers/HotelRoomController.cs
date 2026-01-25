@@ -15,7 +15,7 @@ namespace Marconnes.Api.Controllers
         }
 
         // 1. GET ALL
-        [HttpGet]
+        [HttpGet("all")]
         public IActionResult GetAll()
         {
             var rooms = _dal.GetAllRooms();
@@ -23,7 +23,7 @@ namespace Marconnes.Api.Controllers
         }
 
         // 2. GET BY ROOM
-        [HttpGet("{RoomNumber}")]
+        [HttpGet("search/{RoomNumber}")]
         public IActionResult GetById(int RoomNumber)
         {
             var room = _dal.GetRoomById(RoomNumber);
@@ -35,7 +35,7 @@ namespace Marconnes.Api.Controllers
         }
 
         // 3. CREATE
-        [HttpPost]
+        [HttpPost("add/{room}")]
         public IActionResult Create(HotelRoom room)
         {
             _dal.AddHotelRoom(room);
@@ -43,7 +43,7 @@ namespace Marconnes.Api.Controllers
         }
 
         // 4. UPDATE
-        [HttpPut("{RoomNumber}")]
+        [HttpPut("update/{RoomNumber}")]
         public IActionResult Update(int RoomNumber, HotelRoom room)
         {
             if (RoomNumber != room.RoomNumber)
@@ -56,7 +56,7 @@ namespace Marconnes.Api.Controllers
         }
 
         // 5. DELETE
-        [HttpDelete("{RoomNumber}")]
+        [HttpDelete("delete/{RoomNumber}")]
         public IActionResult Delete(int RoomNumber)
         {
             _dal.DeleteRoom(RoomNumber);
