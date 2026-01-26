@@ -28,6 +28,10 @@ namespace Orchestrator
             {
                 client.BaseAddress = new Uri("https://campingef-api-bnfxe6egdfhac5ck.westeurope-01.azurewebsites.net/");
             });
+            builder.Services.AddHttpClient("GiteAPI", client =>
+            {
+                client.BaseAddress = new Uri("https://gite-api-01-c5b5fhb0ddadb9d6.westeurope-01.azurewebsites.net/");
+            });
 
             // Dependancy Injection
             builder.Services.AddScoped<OrchService>();
