@@ -37,7 +37,6 @@ namespace Orchestrator.ApiConnector
             return await response.Content.ReadAsStringAsync();
         }
 
-
         //Search by placenumber
         //Hotel
         //Camping

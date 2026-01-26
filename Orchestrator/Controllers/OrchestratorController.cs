@@ -33,19 +33,30 @@ namespace Orchestrator.Controllers
             return Ok(data);
         }
 
+        [HttpGet("Gite")]
+        public async Task<IActionResult> GetGite()
+        {
+            var data = await _service.GetGiteData();
+            return Ok(data);
+        }
+
         [HttpGet("Search")]
         public async Task<IActionResult> GetSearch([FromQuery] int zoekterm)
         {
             var hotelSearch = await _service.GetHotelData(zoekterm);
             var campingSearch = await _service.GetCampingData(zoekterm);
+            var giteSearch = await _service.GetGiteData(zoekterm);
 
-            // 3. Geef beide resultaten terug
+            // 3. Geef alle resultaten terug
             return Ok(new
             {
                 Hotel = hotelSearch,
-                Camping = campingSearch
+                Camping = campingSearch,
+                Gite = giteSearch
             });
         }
+
+
 
 
         [HttpGet("combined")]
@@ -53,11 +64,13 @@ namespace Orchestrator.Controllers
         {
             var hotel = await _service.GetHotelData();
             var camping = await _service.GetCampingData();
+            var gite = await _service.GetGiteData();
 
             return Ok(new
             {
                 Hotel = hotel,
-                Camping = camping
+                Camping = camping,
+                gite = gite
             });
         }
 
@@ -154,6 +167,18 @@ namespace Orchestrator.Controllers
             return BadRequest("Kon hotelkamer niet wijzigen. Check of het nummer bestaat en de data klopt.");
         }
 
+        [HttpPut("Gite/{giteNumber}")]
+        public async Task<IActionResult> UpdateGiteKamer(int giteNumber, [FromBody] GiteKamerInput input)
+        {
+            var json = JsonSerializer.SerializeToNode(input).AsObject();
+
+            bool gelukt = await _service.UpdateHotelKamer(giteNumber, json);
+
+            if (gelukt) return Ok($"Gitekamer {giteNumber} is gewijzigd.");
+
+            return BadRequest("Kon Gitekamer niet wijzigen. Check of het nummer bestaat en de data klopt.");
+        }
+
 
         public class ReserveringInput
         {
@@ -211,6 +236,50 @@ namespace Orchestrator.Controllers
             public bool? HasTelevision { get; set; }
             public bool? IsWheelchairAccessible { get; set; }
             public bool? IsSmokingAllowed { get; set; }
+        }
+
+        public class GiteKamerInput
+        {
+            public int GiteNumber { get; set; }
+            public decimal GitePrice { get; set; }
+            public bool IsAvailable { get; set; }
+            public string GiteAddress { get; set; }
+            public int CapacityMin { get; set; }
+            public int CapacityMax { get; set; }
+
+            // Dit is het geneste object voor voorzieningen
+            public GiteAmenities Amenities { get; set; }
+
+            // Dit is de lijst (array) met bedden
+            public List<GiteBed> Beds { get; set; }
+        }
+
+        public class GiteAmenities
+        {
+            public bool Wifi { get; set; }
+            public bool Bath { get; set; }
+            public bool Shower { get; set; }
+            public bool HairDryer { get; set; }
+            public bool SmallChild { get; set; }
+            public bool Toiletries { get; set; }
+            public bool Desk { get; set; }
+            public bool Chair { get; set; }
+            public bool Balcony { get; set; }
+            public bool Sofa { get; set; }
+            public bool SofaBed { get; set; }
+            public bool MiniFridge { get; set; }
+            public bool Kettle { get; set; }
+            public bool Cuttlery { get; set; }
+            public bool EatingArea { get; set; }
+            public bool RoomService { get; set; }
+        }
+
+        public class GiteBed
+        {
+            public int Amount1PrBed { get; set; }
+            public int Amount2PrBed { get; set; }
+            public int Amount3PrBed { get; set; }
+            public string BedSort { get; set; }
         }
     }
 }
