@@ -186,10 +186,11 @@ namespace Orchestrator.Controllers
             public DateOnly Begindatum { get; set; }
             public DateOnly Einddatum { get; set; }
             public int Volwassenen { get; set; }
-            public int Kinderen { get; set; }
+            public int Kinderen07 { get; set; }
+            public int Kinderen712 { get; set; }
 
-            // NIEUW: Dit mag leeg blijven (null)
             public int? GebruikerId { get; set; }
+
             public NieuweGebruikerInput? NieuweGebruiker { get; set; }
         }
 

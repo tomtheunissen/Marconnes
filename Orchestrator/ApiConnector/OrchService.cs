@@ -108,8 +108,6 @@ namespace Orchestrator.ApiConnector
             string url = "api/data/all_reserveringen";
 
             var response = await client.GetAsync(url);
-
-            // Check of het gelukt is
             if (!response.IsSuccessStatusCode)
             {
                 return null;
@@ -120,67 +118,92 @@ namespace Orchestrator.ApiConnector
 
         public async Task<bool> AddReservering(JsonObject json)
         {
+            Console.WriteLine("\n[ORCH] --- Start Combinatie: Nieuwe Gebruiker + Reservering ---");
             var campingClient = _clientfactory.CreateClient("CampingAPI");
 
-            if (json["NieuweGebruiker"] != null)
+            // Helper: Hoofdletterongevoelig zoeken
+            JsonNode? GetCaseInsensitive(JsonObject obj, string key)
             {
-                Console.WriteLine("[ORCH] Nieuwe gebruiker gedetecteerd. Aanmaken...");
-
-                var userNode = json["NieuweGebruiker"];
-
-                var userResponse = await campingClient.PostAsJsonAsync("api/Data/add/gebruiker", userNode);
-
-                if (!userResponse.IsSuccessStatusCode)
-                {
-                    Console.WriteLine("[FOUT] Kon gebruiker niet aanmaken.");
-                    return false; // Stop het hele proces
-                }
-
-                var createdUser = await userResponse.Content.ReadFromJsonAsync<JsonObject>();
-                int nieuwId = (int?)(createdUser["GebruikerId"] ?? createdUser["Gebruiker_id"] ?? createdUser["id"] ?? createdUser["placeNumber"]) ?? 0;
-                Console.WriteLine($"[ORCH] Gebruiker aangemaakt met ID: {nieuwId}");
-                json["GebruikerId"] = nieuwId;
+                return obj.FirstOrDefault(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).Value;
             }
 
-            if (json["Accomodatie"] == null) return false;
-            int accommodatieNummer = (int)json["Accomodatie"];
-            bool bestaat = false;
+            // --- STAP 1: Datums ophalen ---
+            DateOnly nieuwBegin, nieuwEind;
+            try
+            {
+                string? beginStr = GetCaseInsensitive(json, "Begindatum")?.ToString();
+                string? eindStr = GetCaseInsensitive(json, "Einddatum")?.ToString();
 
-            // Hotel (100-199)
-            if (accommodatieNummer >= 100 && accommodatieNummer <= 199)
-            {
-                var hotelClient = _clientfactory.CreateClient("HotelAPI");
-                var check = await hotelClient.GetAsync($"api/HotelRoom/{accommodatieNummer}");
-                if (check.IsSuccessStatusCode) bestaat = true;
-            }
-            // Camping (200+)
-            else if (accommodatieNummer >= 200)
-            {
-                // Gebruik de nieuwe 'zoek' route met :int
-                var check = await campingClient.GetAsync($"api/Data/zoek/{accommodatieNummer}");
-                if (check.IsSuccessStatusCode) bestaat = true;
-            }
-            // Gite (0-99)
-            else if (accommodatieNummer >= 0 && accommodatieNummer < 100)
-            {
-                var hotelClient = _clientfactory.CreateClient("GiteAPI");
-                var check = await hotelClient.GetAsync($"gite/get/{accommodatieNummer}");
-                if (check.IsSuccessStatusCode) bestaat = true;
-            }
+                if (string.IsNullOrEmpty(beginStr) || string.IsNullOrEmpty(eindStr))
+                    throw new Exception("Datums ontbreken.");
 
-            if (!bestaat)
+                nieuwBegin = DateOnly.Parse(beginStr);
+                nieuwEind = DateOnly.Parse(eindStr);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine($"Fout: Accommodatie {accommodatieNummer} bestaat niet.");
+                Console.WriteLine($"[FOUT] Datums ongeldig: {ex.Message}");
                 return false;
             }
 
-            // STAP 4: Reservering opslaan
-            // Let op: We sturen nu het json object door waar 'GebruikerId' zojuist is ingevuld
-            var response = await campingClient.PostAsJsonAsync("api/Data/add/reservering", json);
+            // --- STAP 2: Nieuwe Gebruiker Aanmaken
+            var nieuweGebruikerNode = GetCaseInsensitive(json, "NieuweGebruiker");
+            int huidigId = (int?)(GetCaseInsensitive(json, "GebruikerId")) ?? 0;
 
-            return response.IsSuccessStatusCode;
+            if (nieuweGebruikerNode != null)
+            {
+                Console.WriteLine("[ORCH] Nieuwe gebruiker gedetecteerd. Aanmaken in backend...");
+
+                var userResponse = await campingClient.PostAsJsonAsync("api/Data/add/gebruiker", nieuweGebruikerNode);
+
+                if (!userResponse.IsSuccessStatusCode)
+                {
+                    string err = await userResponse.Content.ReadAsStringAsync();
+                    throw new Exception($"Kon gebruiker niet aanmaken ({userResponse.StatusCode}): {err}");
+                }
+
+                var createdUser = await userResponse.Content.ReadFromJsonAsync<JsonObject>();
+                int nieuwId = (int?)(GetCaseInsensitive(createdUser, "GebruikerId") ?? GetCaseInsensitive(createdUser, "id")) ?? 0;
+
+                if (nieuwId == 0) throw new Exception("Gebruiker aangemaakt, maar ID is 0 teruggekomen.");
+
+                Console.WriteLine($"[ORCH] Gebruiker succesvol aangemaakt met ID: {nieuwId}");
+                huidigId = nieuwId;
+            }
+
+            int accommodatieNummer = (int?)(GetCaseInsensitive(json, "Accomodatie")) ?? 0;
+            if (accommodatieNummer == 0) throw new Exception("Accomodatie nummer ontbreekt.");
+
+            if (huidigId == 0) throw new Exception("Geen geldig GebruikerId (en aanmaken nieuwe gebruiker is ook niet gelukt).");
+
+
+            Console.WriteLine($"[ORCH] Reservering aanmaken voor GebruikerID {huidigId}...");
+
+            var payloadObject = new
+            {
+                Accomodatie = accommodatieNummer,
+
+                GebruikerId = huidigId,
+
+                Begindatum = nieuwBegin.ToString("yyyy-MM-dd"),
+                Einddatum = nieuwEind.ToString("yyyy-MM-dd"),
+
+                Volwassenen = (int?)(GetCaseInsensitive(json, "Volwassenen")) ?? 0,
+                Kinderen07 = (int?)(GetCaseInsensitive(json, "Kinderen07")) ?? 0,
+                Kinderen712 = (int?)(GetCaseInsensitive(json, "Kinderen712")) ?? 0
+            };
+
+            var response = await campingClient.PostAsJsonAsync("api/Data/add/reservering", payloadObject);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string detail = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Backend Reservering Fout ({response.StatusCode}): {detail}");
+            }
+
+            Console.WriteLine("[SUCCES] Reservering en eventuele gebruiker aangemaakt!");
+            return true;
         }
-
         public async Task<List<object>> GetVerrijkteReserveringen()
         {
             var campingClient = _clientfactory.CreateClient("CampingAPI");
@@ -221,20 +244,17 @@ namespace Orchestrator.ApiConnector
                 else if (accommodatieNummer >= 200)
                 {
                     type = "Camping";
-                    // Check navigatie of haal los op
                     if (res["AccomodatieNavigation"] != null)
                     {
                         details = res["AccomodatieNavigation"];
                     }
                     else
                     {
-                        // URL volgens Swagger -> 'zoek/{id}'
                         var campResp = await campingClient.GetAsync($"api/Data/zoek/{accommodatieNummer}");
                         if (campResp.IsSuccessStatusCode)
                         {
                             try
                             {
-                                // Soms is het een lijst, soms een object. We proberen beide.
                                 var lijst = await campResp.Content.ReadFromJsonAsync<JsonArray>();
                                 if (lijst != null && lijst.Count > 0) details = lijst[0];
                             }
@@ -257,7 +277,6 @@ namespace Orchestrator.ApiConnector
                 object gekoppeldeGebruiker = null;
                 if (gebruikersLijst != null && gebruikerId > 0)
                 {
-                    // Zoek op ID (houd rekening met 'Gebruiker_id' uit je DB screenshot)
                     var user = gebruikersLijst.FirstOrDefault(u =>
                         (int?)(u["GebruikerId"] ?? u["Gebruiker_id"] ?? u["gebruiker_id"] ?? u["Id"]) == gebruikerId
                     );
@@ -287,7 +306,6 @@ namespace Orchestrator.ApiConnector
         {
             var client = _clientfactory.CreateClient("CampingAPI");
 
-            // WIJZIGING: Exact zoals in Swagger (zonder /camping ertussen)
             var response = await client.GetAsync($"api/Data/zoek/{nummer}");
 
             if (!response.IsSuccessStatusCode) return null;
@@ -311,9 +329,6 @@ namespace Orchestrator.ApiConnector
         public async Task<string> ZoekGebruikerOpNaam(string naam)
         {
             var client = _clientfactory.CreateClient("CampingAPI");
-
-            // We gebruiken hier dezelfde zoek-URL als bij de campingplekken.
-            // Omdat 'naam' tekst is (en geen getal), pakt de Backend automatisch de gebruikers-zoekfunctie.
             var response = await client.GetAsync($"api/Data/zoek/{naam}");
 
             if (!response.IsSuccessStatusCode)
@@ -343,25 +358,15 @@ namespace Orchestrator.ApiConnector
         public async Task<bool> UpdateHotelKamer(int roomNumber, JsonObject hotelData)
         {
             var client = _clientfactory.CreateClient("HotelAPI");
-
-            // We zorgen dat het ID in de JSON gelijk is aan de URL (verplicht voor de PUT)
             hotelData["RoomNumber"] = roomNumber;
-
-            // URL voorbeeld: api/HotelRoom/105
             var response = await client.PutAsJsonAsync($"api/HotelRoom/{roomNumber}", hotelData);
-
             return response.IsSuccessStatusCode;
         }
         public async Task<bool> UpdateGiteKamer(int giteNumber, JsonObject gitedata)
         {
             var client = _clientfactory.CreateClient("GiteAPI");
-
-            // We zorgen dat het ID in de JSON gelijk is aan de URL (verplicht voor de PUT)
             gitedata["giteNumber"] = giteNumber;
-
-            // URL voorbeeld: api/HotelRoom/105
             var response = await client.PutAsJsonAsync($"gite/put/{giteNumber}", gitedata);
-
             return response.IsSuccessStatusCode;
         }
 
@@ -370,10 +375,7 @@ namespace Orchestrator.ApiConnector
         public async Task<bool> DeleteReservering(int id)
         {
             var client = _clientfactory.CreateClient("CampingAPI");
-
-            // Check de route in DataController: [HttpDelete("delete_reserveringen/{ReserveringId}")]
             var response = await client.DeleteAsync($"api/Data/delete_reserveringen/{id}");
-
             return response.IsSuccessStatusCode;
         }
 
