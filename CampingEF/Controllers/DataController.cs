@@ -140,7 +140,7 @@ namespace CampingEF.Controllers
         {
             _context.Gebruikers.Add(nieuweUser);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(ZoekOpNaam), new { gebruiker = nieuweUser.Naam }, nieuweUser);
+            return CreatedAtAction(nameof(ZoekOpNaam), new { naamGebruiker = nieuweUser.Naam }, nieuweUser);
         }
     }
 }

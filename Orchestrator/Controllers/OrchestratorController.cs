@@ -97,6 +97,8 @@ namespace Orchestrator.Controllers
 
 
         [HttpPost("reserveringen")]
+        // Bestaande gebruiker: "nieuweGebruiker": null
+        // Nieuwe gebruiker: GebruikerId: null
         public async Task<IActionResult> AddReservering([FromBody] ReserveringInput input)
         {
             var json = JsonSerializer.SerializeToNode(input).AsObject();

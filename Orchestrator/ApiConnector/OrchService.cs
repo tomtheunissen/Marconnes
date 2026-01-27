@@ -118,76 +118,76 @@ namespace Orchestrator.ApiConnector
 
         public async Task<bool> AddReservering(JsonObject json)
         {
-            Console.WriteLine("\n[ORCH] --- Start Combinatie: Nieuwe Gebruiker + Reservering ---");
+            Console.WriteLine("\n[ORCH] --- Start Slimme Reservering (Met Herstel) ---");
             var campingClient = _clientfactory.CreateClient("CampingAPI");
 
-            // Helper: Hoofdletterongevoelig zoeken
+            // Helper functie
             JsonNode? GetCaseInsensitive(JsonObject obj, string key)
             {
                 return obj.FirstOrDefault(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).Value;
             }
 
-            // --- STAP 1: Datums ophalen ---
-            DateOnly nieuwBegin, nieuwEind;
-            try
-            {
-                string? beginStr = GetCaseInsensitive(json, "Begindatum")?.ToString();
-                string? eindStr = GetCaseInsensitive(json, "Einddatum")?.ToString();
+            // --- STAP 1: Datums veiligstellen ---
+            string? beginStr = GetCaseInsensitive(json, "Begindatum")?.ToString();
+            string? eindStr = GetCaseInsensitive(json, "Einddatum")?.ToString();
 
-                if (string.IsNullOrEmpty(beginStr) || string.IsNullOrEmpty(eindStr))
-                    throw new Exception("Datums ontbreken.");
-
-                nieuwBegin = DateOnly.Parse(beginStr);
-                nieuwEind = DateOnly.Parse(eindStr);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FOUT] Datums ongeldig: {ex.Message}");
-                return false;
-            }
-
-            // --- STAP 2: Nieuwe Gebruiker Aanmaken
+            // --- STAP 2: Gebruiker Aanmaken (Met Reddingsplan) ---
             var nieuweGebruikerNode = GetCaseInsensitive(json, "NieuweGebruiker");
             int huidigId = (int?)(GetCaseInsensitive(json, "GebruikerId")) ?? 0;
 
             if (nieuweGebruikerNode != null)
             {
-                Console.WriteLine("[ORCH] Nieuwe gebruiker gedetecteerd. Aanmaken in backend...");
+                string naam = nieuweGebruikerNode["naam"]?.ToString() ?? "Onbekend";
+                Console.WriteLine($"[ORCH] Gebruiker '{naam}' proberen aan te maken...");
 
                 var userResponse = await campingClient.PostAsJsonAsync("api/Data/add/gebruiker", nieuweGebruikerNode);
 
-                if (!userResponse.IsSuccessStatusCode)
+                if (userResponse.IsSuccessStatusCode)
                 {
-                    string err = await userResponse.Content.ReadAsStringAsync();
-                    throw new Exception($"Kon gebruiker niet aanmaken ({userResponse.StatusCode}): {err}");
+                    // Scenario A: Het ging in één keer goed (onwaarschijnlijk met jouw backend)
+                    var createdUser = await userResponse.Content.ReadFromJsonAsync<JsonObject>();
+                    huidigId = (int?)(GetCaseInsensitive(createdUser, "GebruikerId") ?? GetCaseInsensitive(createdUser, "id")) ?? 0;
                 }
+                else
+                {
+                    // Scenario B: De backend crashte (500), maar heeft hem waarschijnlijk wel opgeslagen.
+                    Console.WriteLine($"[INFO] Backend gaf foutmelding ({userResponse.StatusCode}). We starten Reddingsoperatie...");
 
-                var createdUser = await userResponse.Content.ReadFromJsonAsync<JsonObject>();
-                int nieuwId = (int?)(GetCaseInsensitive(createdUser, "GebruikerId") ?? GetCaseInsensitive(createdUser, "id")) ?? 0;
+                    // We zoeken de gebruiker op naam in de database
+                    // Let op: Uri.EscapeDataString zorgt dat spaties (zoals in "Test Persoon") geen fouten geven in de URL
+                    string veiligeNaam = Uri.EscapeDataString(naam);
+                    var zoekResponse = await campingClient.GetAsync($"api/Data/zoek/{veiligeNaam}");
 
-                if (nieuwId == 0) throw new Exception("Gebruiker aangemaakt, maar ID is 0 teruggekomen.");
+                    if (zoekResponse.IsSuccessStatusCode)
+                    {
+                        var gevondenUsers = await zoekResponse.Content.ReadFromJsonAsync<List<JsonObject>>();
+                        // We pakken de laatste (meest recente) die matcht
+                        var user = gevondenUsers?.LastOrDefault();
 
-                Console.WriteLine($"[ORCH] Gebruiker succesvol aangemaakt met ID: {nieuwId}");
-                huidigId = nieuwId;
+                        if (user != null)
+                        {
+                            huidigId = (int?)(GetCaseInsensitive(user, "GebruikerId") ?? GetCaseInsensitive(user, "id")) ?? 0;
+                            Console.WriteLine($"[SUCCES] Herstel gelukt! Gebruiker gevonden met ID: {huidigId}");
+                        }
+                    }
+
+                    if (huidigId == 0)
+                    {
+                        // Als we hem écht niet kunnen vinden, dan pas geven we het op.
+                        throw new Exception($"CRITISCH: Gebruiker aanmaken mislukt én gebruiker niet gevonden in DB.");
+                    }
+                }
             }
 
-            int accommodatieNummer = (int?)(GetCaseInsensitive(json, "Accomodatie")) ?? 0;
-            if (accommodatieNummer == 0) throw new Exception("Accomodatie nummer ontbreekt.");
-
-            if (huidigId == 0) throw new Exception("Geen geldig GebruikerId (en aanmaken nieuwe gebruiker is ook niet gelukt).");
-
-
-            Console.WriteLine($"[ORCH] Reservering aanmaken voor GebruikerID {huidigId}...");
+            // --- STAP 3: De Reservering Maken ---
+            if (huidigId == 0) throw new Exception("Geen GebruikerId beschikbaar.");
 
             var payloadObject = new
             {
-                Accomodatie = accommodatieNummer,
-
+                Accomodatie = (int?)(GetCaseInsensitive(json, "Accomodatie")) ?? 0,
                 GebruikerId = huidigId,
-
-                Begindatum = nieuwBegin.ToString("yyyy-MM-dd"),
-                Einddatum = nieuwEind.ToString("yyyy-MM-dd"),
-
+                Begindatum = beginStr,
+                Einddatum = eindStr,
                 Volwassenen = (int?)(GetCaseInsensitive(json, "Volwassenen")) ?? 0,
                 Kinderen07 = (int?)(GetCaseInsensitive(json, "Kinderen07")) ?? 0,
                 Kinderen712 = (int?)(GetCaseInsensitive(json, "Kinderen712")) ?? 0
@@ -198,10 +198,9 @@ namespace Orchestrator.ApiConnector
             if (!response.IsSuccessStatusCode)
             {
                 string detail = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Backend Reservering Fout ({response.StatusCode}): {detail}");
+                throw new Exception($"RESERVERING FOUT: {detail}");
             }
 
-            Console.WriteLine("[SUCCES] Reservering en eventuele gebruiker aangemaakt!");
             return true;
         }
         public async Task<List<object>> GetVerrijkteReserveringen()
