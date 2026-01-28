@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CampingEF.Models;
 
@@ -13,5 +14,6 @@ public partial class Gebruiker
 
     public string? Telefoonnummer { get; set; }
 
+    [JsonIgnore]
     public virtual ICollection<Reserveringen> Reserveringens { get; set; } = new List<Reserveringen>();
 }

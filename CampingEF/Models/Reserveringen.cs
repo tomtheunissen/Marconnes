@@ -17,6 +17,8 @@ public partial class Reserveringen
     [JsonPropertyName("TotaalPrijs")]
     public decimal? TotaalPrijs { get; set; }
 
+    [JsonIgnore]
     public virtual CampingPlace? AccomodatieNavigation { get; set; }
+    //[JsonIgnore]
     public virtual Gebruiker? Gebruiker { get; set; }
 }

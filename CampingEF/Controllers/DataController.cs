@@ -83,10 +83,7 @@ namespace CampingEF.Controllers
         [HttpGet("all_reserveringen")]
         public async Task<ActionResult<IEnumerable<Reserveringen>>> GetReserveringen()
         {
-            return await _context.Reserveringens
-                .Include(r => r.AccomodatieNavigation)
-                .Include(r => r.Gebruiker)
-                .ToListAsync();
+            return await _context.Reserveringens.ToListAsync();
         }
 
         [HttpPost("add/reservering")]
