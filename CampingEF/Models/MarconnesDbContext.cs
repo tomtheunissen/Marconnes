@@ -58,6 +58,9 @@ public partial class MarconnesDbContext : DbContext
             entity.Property(e => e.Kinderen07).HasColumnName("kinderen07");
             entity.Property(e => e.Kinderen712).HasColumnName("kinderen712");
             entity.Property(e => e.Volwassenen).HasColumnName("volwassenen");
+            entity.Property(e => e.TotaalPrijs)
+          .HasColumnName("TotaalPrijs")
+          .HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.AccomodatieNavigation).WithMany(p => p.Reserveringens)
                 .HasForeignKey(d => d.Accomodatie)

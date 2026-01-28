@@ -13,6 +13,7 @@ public partial class Reserveringen
     public int Volwassenen { get; set; }
     public int? Kinderen07 { get; set; }
     public int? Kinderen712 { get; set; }
+    public decimal? TotaalPrijs { get; set; }
 
     public virtual CampingPlace? AccomodatieNavigation { get; set; }
     public virtual Gebruiker? Gebruiker { get; set; }
