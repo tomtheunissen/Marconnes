@@ -29,11 +29,12 @@ namespace Orchestrator.ApiConnector
             var hotelClient = _clientfactory.CreateClient("HotelAPI");
             var campingClient = _clientfactory.CreateClient("CampingAPI");
 
-            // STAP 1: Haal alle basisdata op (Kamers, Reserveringen, Gebruikers)
+            // hotel kamers ophalen
             var hotelResponse = await hotelClient.GetAsync("api/HotelRoom");
             if (!hotelResponse.IsSuccessStatusCode) return "[]";
             var kamers = await hotelResponse.Content.ReadFromJsonAsync<JsonArray>();
 
+            // haal reserveringen op
             var reserveringResponse = await campingClient.GetAsync("api/Data/all_reserveringen");
             JsonArray? alleReserveringen = null;
             if (reserveringResponse.IsSuccessStatusCode)
@@ -41,7 +42,7 @@ namespace Orchestrator.ApiConnector
                 alleReserveringen = await reserveringResponse.Content.ReadFromJsonAsync<JsonArray>();
             }
 
-            // NIEUW: Haal ook de gebruikers op!
+            // haal gebruikers op
             var gebruikersResponse = await campingClient.GetAsync("api/Data/all_gebruikers");
             JsonArray? alleGebruikers = null;
             if (gebruikersResponse.IsSuccessStatusCode)
@@ -49,25 +50,23 @@ namespace Orchestrator.ApiConnector
                 alleGebruikers = await gebruikersResponse.Content.ReadFromJsonAsync<JsonArray>();
             }
 
-            // STAP 2: Combineer alles (De "Grote Rits")
+            // combineer data
             if (kamers != null && alleReserveringen != null)
             {
                 foreach (var kamer in kamers)
                 {
-                    // Veilig het ID van de kamer ophalen
                     int kamerId = (int?)(kamer["id"] ?? kamer["Id"] ?? kamer["RoomNumber"] ?? kamer["roomNumber"]) ?? 0;
 
                     if (kamerId > 0)
                     {
-                        // A. Zoek reserveringen voor deze kamer
+                        // Zoek reserveringen voor kamer
                         var boekingenVoorDezeKamer = alleReserveringen.Where(r =>
                         {
                             int resAcc = (int?)(r["Accomodatie"] ?? r["accomodatie"] ?? r["Accommodation"]) ?? 0;
                             return resAcc == kamerId;
                         }).Select(x => x.DeepClone()).Cast<JsonObject>().ToList();
-                        // We gebruiken DeepClone() zodat we het object kunnen aanpassen zonder de originele lijst te breken
 
-                        // B. Koppel de Gebruiker aan de Reservering
+                        // Koppel Gebruiker aan Reservering
                         if (alleGebruikers != null)
                         {
                             foreach (var boeking in boekingenVoorDezeKamer)
@@ -80,7 +79,6 @@ namespace Orchestrator.ApiConnector
                                         (int?)(u["GebruikerId"] ?? u["id"] ?? u["Id"]) == gebruikerId
                                     );
 
-                                    // Voeg de gebruiker toe IN het reserveringsobject
                                     if (gebruiker != null)
                                     {
                                         boeking["Gebruiker"] = gebruiker.DeepClone();
@@ -89,7 +87,6 @@ namespace Orchestrator.ApiConnector
                             }
                         }
 
-                        // C. Voeg de verrijkte reserveringen toe aan de kamer
                         kamer["Reserveringen"] = new JsonArray(boekingenVoorDezeKamer.ToArray());
                     }
                 }
@@ -197,12 +194,13 @@ namespace Orchestrator.ApiConnector
             Console.WriteLine("[ORCH] Start Reservering (Smart Check)");
             var campingClient = _clientfactory.CreateClient("CampingAPI");
 
+            // haal gegevens invulveld op
             JsonNode? GetCaseInsensitive(JsonObject obj, string key)
             {
                 return obj.FirstOrDefault(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).Value;
             }
 
-            // --- STAP 1: Datums ---
+            // Datums 
             DateOnly nieuwBegin, nieuwEind;
             string? beginStr = GetCaseInsensitive(json, "Begindatum")?.ToString();
             string? eindStr = GetCaseInsensitive(json, "Einddatum")?.ToString();
@@ -210,13 +208,13 @@ namespace Orchestrator.ApiConnector
             if (string.IsNullOrEmpty(beginStr) || string.IsNullOrEmpty(eindStr)) return false;
             if (!DateOnly.TryParse(beginStr, out nieuwBegin) || !DateOnly.TryParse(eindStr, out nieuwEind)) return false;
 
-            // --- STAP 2: Gebruiker ---
+            // check of nieuwe gebruiker ingevuld of gebruiker Id
             var nieuweGebruikerNode = GetCaseInsensitive(json, "NieuweGebruiker");
             int huidigId = (int?)(GetCaseInsensitive(json, "GebruikerId")) ?? 0;
 
             if (nieuweGebruikerNode != null)
             {
-                // ... (Jouw bestaande gebruikerslogica, ingekort voor leesbaarheid) ...
+                // Voeg nieuwe gebruiker toe
                 var userResponse = await campingClient.PostAsJsonAsync("api/Data/add/gebruiker", nieuweGebruikerNode);
                 if (userResponse.IsSuccessStatusCode)
                 {
@@ -225,7 +223,7 @@ namespace Orchestrator.ApiConnector
                 }
                 else
                 {
-                    // Herstel optie (zoeken)
+                    // zoek gebruiker
                     string naam = nieuweGebruikerNode["naam"]?.ToString() ?? "";
                     var zoek = await campingClient.GetAsync($"api/Data/zoek/{Uri.EscapeDataString(naam)}");
                     if (zoek.IsSuccessStatusCode)
@@ -239,29 +237,27 @@ namespace Orchestrator.ApiConnector
 
             if (huidigId == 0) { Console.WriteLine("[FOUT] Geen GebruikerId."); return false; }
 
-            // --- STAP 3: SLIMME BESCHIKBAARHEIDS CHECK ---
+            // BESCHIKBAARHEIDS CHECK
             int accommodatieNummer = (int?)(GetCaseInsensitive(json, "Accomodatie")) ?? 0;
             if (accommodatieNummer == 0) return false;
 
             bool plekBestaat = false;
 
-            // HOTEL LOGICA (100-199)
+            // HOTEL (100-199)
             if (accommodatieNummer >= 100 && accommodatieNummer <= 199)
             {
                 Console.WriteLine($"[ORCH] Checken bij Hotel API voor kamer {accommodatieNummer}...");
                 var hotelClient = _clientfactory.CreateClient("HotelAPI");
 
-                // We vragen aan de HotelAPI of de kamer bestaat
+                // check of kamer bestaat
                 var resp = await hotelClient.GetAsync($"api/HotelRoom/{accommodatieNummer}");
 
                 if (resp.IsSuccessStatusCode)
                 {
                     plekBestaat = true;
-                    Console.WriteLine("[ORCH] Hotelkamer gevonden!");
-                    // LET OP: We doen hier GEEN check bij campingClient, want die kent de hotelkamers niet.
-                }
+                    Console.WriteLine("[ORCH] Hotelkamer gevonden!");                }
             }
-            // CAMPING LOGICA (200+)
+            // CAMPING (200+)
             else if (accommodatieNummer >= 200)
             {
                 Console.WriteLine($"[ORCH] Checken bij Camping API voor plek {accommodatieNummer}...");
@@ -271,7 +267,6 @@ namespace Orchestrator.ApiConnector
                 {
                     plekBestaat = true;
 
-                    // ALLEEN BIJ CAMPING: Checken op dubbele boekingen (want die data zit in de response)
                     var plekkenLijst = await resp.Content.ReadFromJsonAsync<List<JsonObject>>();
                     var bestaandeLijst = plekkenLijst?.FirstOrDefault()?["reserveringens"]?.AsArray();
 
@@ -293,7 +288,7 @@ namespace Orchestrator.ApiConnector
                     }
                 }
             }
-            // GITE LOGICA (< 100)
+            // GITE (< 100)
             else
             {
                 var giteClient = _clientfactory.CreateClient("GiteAPI");
@@ -301,14 +296,14 @@ namespace Orchestrator.ApiConnector
                 if (resp.IsSuccessStatusCode) plekBestaat = true;
             }
 
-            // CRUCIAAL: Als de plek volgens de juiste API niet bestaat, stoppen we.
+            // stop als plek niet bestaat
             if (!plekBestaat)
             {
                 Console.WriteLine($"[FOUT] Accommodatie {accommodatieNummer} niet gevonden bij de bron.");
                 return false;
             }
 
-            // --- STAP 4: PRIJS & OPSLAAN ---
+            // PRIJS GEGEVENS OPHALEN
             int volw = (int?)(GetCaseInsensitive(json, "Volwassenen")) ?? 0;
             int k07 = (int?)(GetCaseInsensitive(json, "Kinderen07")) ?? 0;
             int k712 = (int?)(GetCaseInsensitive(json, "Kinderen712")) ?? 0;
@@ -319,6 +314,7 @@ namespace Orchestrator.ApiConnector
 
             var payload = new
             {
+                // Vul de velden in zoals verwacht door de API
                 Accomodatie = accommodatieNummer,
                 GebruikerId = huidigId,
                 Begindatum = beginStr,
@@ -329,8 +325,7 @@ namespace Orchestrator.ApiConnector
                 TotaalPrijs = prijs
             };
 
-            // Opslaan in de centrale database
-            // Omdat je de Foreign Key hebt verwijderd, accepteert de database nu ook Hotel-ID's!
+            // Opslaan in database
             var postResp = await campingClient.PostAsJsonAsync("api/Data/add/reservering", payload);
 
             if (!postResp.IsSuccessStatusCode)
@@ -371,7 +366,6 @@ namespace Orchestrator.ApiConnector
                 int gebruikerId = (int?)(res["GebruikerId"] ?? res["Gebruiker_id"] ?? res["gebruiker_id"]) ?? 0;
                 int reserveringId = (int?)(res["ReserveringId"] ?? res["Reservering_id"]) ?? 0;
 
-                // --- LOGICA ---
                 if (accommodatieNummer >= 100 && accommodatieNummer <= 199)
                 {
                     type = "Hotel";
@@ -439,7 +433,6 @@ namespace Orchestrator.ApiConnector
 
         //Search
         //Camping Plek
-        //
         public async Task<string?> ZoekCampingPlek(string nummer)
         {
             var client = _clientfactory.CreateClient("CampingAPI");
@@ -518,7 +511,6 @@ namespace Orchestrator.ApiConnector
         }
 
         // Prijs berekenen
-        // De parameters heten nu exact zoals de kolommen in je database tabel
         private decimal BerekenTotaalPrijs(int Accomodatie, DateOnly begindatum, DateOnly einddatum, int volwassenen, int kinderen07, int kinderen712)
         {
             // Bereken aantal nachten
@@ -527,7 +519,7 @@ namespace Orchestrator.ApiConnector
 
             decimal totaal = 0;
 
-            // LOGICA VOOR CAMPING (Accommodatie nummers 200 en hoger)
+            // LOGICA CAMPING (nummers 200 en hoger)
             if (Accomodatie >= 200)
             {
                 decimal prijsPerNacht = 7.50m; // Plaats
@@ -542,7 +534,7 @@ namespace Orchestrator.ApiConnector
 
                 totaal = prijsPerNacht * nachten;
             }
-            // LOGICA VOOR HOTEL (Accommodatie nummers lager dan 200)
+            // LOGICA HOTEL (Accommodatie nummers lager dan 200)
             else
             {
                 int totaalPersonen = volwassenen + kinderen07 + kinderen712;

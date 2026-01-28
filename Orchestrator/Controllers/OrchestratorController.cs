@@ -134,15 +134,9 @@ namespace Orchestrator.Controllers
         [HttpPut("camping/{id}")]
         public async Task<IActionResult> UpdateCampingPlek(int id, [FromBody] CampingPlekInput input)
         {
-            // 1. Zet input om naar JsonObject
             var json = JsonSerializer.SerializeToNode(input).AsObject();
-
-            // 2. Stuur naar de service
             bool gelukt = await _service.UpdateCampingPlek(id, json);
-
             if (gelukt) return Ok($"Campingplek {id} succesvol gewijzigd.");
-
-            // Foutafhandeling
             return BadRequest("Kon campingplek niet wijzigen. Check of het nummer bestaat.");
         }
 
@@ -150,10 +144,7 @@ namespace Orchestrator.Controllers
         public async Task<IActionResult> DeleteReservering(int id)
         {
             bool gelukt = await _service.DeleteReservering(id);
-
             if (gelukt) return Ok($"Reservering {id} is verwijderd.");
-
-            // Als het niet lukt (bijv. id bestaat niet of server error)
             return NotFound("Kon reservering niet verwijderen. Check of het ID bestaat.");
         }
 
@@ -161,11 +152,8 @@ namespace Orchestrator.Controllers
         public async Task<IActionResult> UpdateHotelKamer(int roomNumber, [FromBody] HotelKamerInput input)
         {
             var json = JsonSerializer.SerializeToNode(input).AsObject();
-
             bool gelukt = await _service.UpdateHotelKamer(roomNumber, json);
-
             if (gelukt) return Ok($"Hotelkamer {roomNumber} is gewijzigd.");
-
             return BadRequest("Kon hotelkamer niet wijzigen. Check of het nummer bestaat en de data klopt.");
         }
 
@@ -173,11 +161,8 @@ namespace Orchestrator.Controllers
         public async Task<IActionResult> UpdateGiteKamer(int giteNumber, [FromBody] GiteKamerInput input)
         {
             var json = JsonSerializer.SerializeToNode(input).AsObject();
-
             bool gelukt = await _service.UpdateHotelKamer(giteNumber, json);
-
             if (gelukt) return Ok($"Gitekamer {giteNumber} is gewijzigd.");
-
             return BadRequest("Kon Gitekamer niet wijzigen. Check of het nummer bestaat en de data klopt.");
         }
 
@@ -222,16 +207,13 @@ namespace Orchestrator.Controllers
 
         public class HotelKamerInput
         {
-            // Verplichte velden (Allow Nulls = Uit)
             public int MaxGuests { get; set; }
             public decimal Price { get; set; }
 
-            // Optionele velden (Allow Nulls = Aan, dus we gebruiken een vraagteken)
             public int? Floor { get; set; }
             public int? SquareMeters { get; set; }
             public int? NumberOfBeds { get; set; }
 
-            // Bit in SQL wordt bool in C#
             public bool? IsDoubleBed { get; set; }
             public bool? HasAirConditioning { get; set; }
             public bool? HasHeating { get; set; }
@@ -250,10 +232,7 @@ namespace Orchestrator.Controllers
             public int CapacityMin { get; set; }
             public int CapacityMax { get; set; }
 
-            // Dit is het geneste object voor voorzieningen
             public GiteAmenities Amenities { get; set; }
-
-            // Dit is de lijst (array) met bedden
             public List<GiteBed> Beds { get; set; }
         }
 
