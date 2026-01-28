@@ -56,9 +56,6 @@ namespace Orchestrator.Controllers
             });
         }
 
-
-
-
         [HttpGet("combined")]
         public async Task<IActionResult> GetCombined()
         {
@@ -103,11 +100,28 @@ namespace Orchestrator.Controllers
         {
             var json = JsonSerializer.SerializeToNode(input).AsObject();
 
-            bool gelukt = await _service.AddReservering(json);
+            try
+            {
+                bool gelukt = await _service.AddReservering(json);
 
-            if (gelukt) return Ok("Reservering succesvol aangemaakt!");
+                if (gelukt)
+                {
+                    return Ok(new { message = "Reservering succesvol aangemaakt!" });
+                }
 
-            return BadRequest("Kon reservering niet maken.");
+                return BadRequest(new { message = "Kon reservering niet maken (ongeldige invoer)." });
+            }
+            // 3. SPECIFIEKE FOUT: DUBBELE BOEKING
+            catch (InvalidOperationException ex)
+            {
+                // Geeft HTTP 409 Conflict terug aan de frontend
+                return Conflict(new { error = "Dubbele Boeking", message = ex.Message });
+            }
+            // 4. OVERIGE FOUTEN
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Server Fout", message = ex.Message });
+            }
         }
 
         [HttpGet("gebruikers")]

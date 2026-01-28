@@ -168,7 +168,6 @@ namespace Orchestrator.ApiConnector
             return await response.Content.ReadAsStringAsync();
         }
 
-
         //Reserveringen
         //get all
         //add
@@ -188,7 +187,6 @@ namespace Orchestrator.ApiConnector
 
             return await response.Content.ReadAsStringAsync();
         }
-
         public async Task<bool> AddReservering(JsonObject json)
         {
             Console.WriteLine("[ORCH] Start Reservering (Smart Check)");
@@ -249,16 +247,51 @@ namespace Orchestrator.ApiConnector
                 Console.WriteLine($"[ORCH] Checken bij Hotel API voor kamer {accommodatieNummer}...");
                 var hotelClient = _clientfactory.CreateClient("HotelAPI");
 
-                // check of kamer bestaat
+                // Check kamer bestaat
                 var resp = await hotelClient.GetAsync($"api/HotelRoom/{accommodatieNummer}");
 
                 if (resp.IsSuccessStatusCode)
                 {
                     plekBestaat = true;
-                    Console.WriteLine("[ORCH] Hotelkamer gevonden!");                }
+                    Console.WriteLine("[ORCH] Hotelkamer gevonden! Nu checken op dubbele boekingen...");
+
+                    // B. Check dubbele boekingen in database
+                    var resResp = await campingClient.GetAsync("api/Data/all_reserveringen");
+                    if (resResp.IsSuccessStatusCode)
+                    {
+                        var alleReserveringen = await resResp.Content.ReadFromJsonAsync<JsonArray>();
+
+                        // Filter: Alleen reserveringen voor DEZE kamer
+                        var boekingenVoorDezeKamer = alleReserveringen?.Where(r =>
+                            (int?)(r["Accomodatie"] ?? r["accomodatie"]) == accommodatieNummer
+                        );
+
+                        if (boekingenVoorDezeKamer != null)
+                        {
+                            foreach (var reservering in boekingenVoorDezeKamer)
+                            {
+                                string? sStr = reservering["begindatum"]?.ToString();
+                                string? eStr = reservering["einddatum"]?.ToString();
+
+                                if (sStr != null && eStr != null)
+                                {
+                                    DateOnly oudStart = DateOnly.Parse(sStr);
+                                    DateOnly oudEind = DateOnly.Parse(eStr);
+
+                                    // OVERLAP CHECK
+                                    if (nieuwBegin < oudEind && nieuwEind > oudStart)
+                                    {
+                                        Console.WriteLine($"[FOUT] Dubbele boeking op hotelkamer {accommodatieNummer}.");
+                                        throw new InvalidOperationException($"De kamer is al geboekt van {oudStart} tot {oudEind}.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            // CAMPING (200+)
-            else if (accommodatieNummer >= 200)
+            // CAMPING (200-299)
+            else if (accommodatieNummer >= 200 && accommodatieNummer <= 300)
             {
                 Console.WriteLine($"[ORCH] Checken bij Camping API voor plek {accommodatieNummer}...");
                 var resp = await campingClient.GetAsync($"api/Data/zoek/{accommodatieNummer}");
@@ -276,12 +309,16 @@ namespace Orchestrator.ApiConnector
                         {
                             string? sStr = reservering["begindatum"]?.ToString();
                             string? eStr = reservering["einddatum"]?.ToString();
+
                             if (sStr != null && eStr != null)
                             {
-                                if (nieuwBegin < DateOnly.Parse(eStr) && nieuwEind > DateOnly.Parse(sStr))
+                                DateOnly oudStart = DateOnly.Parse(sStr);
+                                DateOnly oudEind = DateOnly.Parse(eStr);
+
+                                if (nieuwBegin < oudEind && nieuwEind > oudStart)
                                 {
-                                    Console.WriteLine($"[FOUT] Dubbele boeking op campingplek.");
-                                    return false;
+                                    Console.WriteLine($"[FOUT] Dubbele boeking op campingplek {accommodatieNummer}.");
+                                    throw new InvalidOperationException($"Dubbele boeking: Plek {accommodatieNummer} is al bezet van {oudStart} tot {oudEind}.");
                                 }
                             }
                         }
@@ -430,7 +467,6 @@ namespace Orchestrator.ApiConnector
             return resultaatLijst;
         }
 
-
         //Search
         //Camping Plek
         public async Task<string?> ZoekCampingPlek(string nummer)
@@ -456,7 +492,6 @@ namespace Orchestrator.ApiConnector
 
             return await response.Content.ReadAsStringAsync();
         }
-
         public async Task<string> ZoekGebruikerOpNaam(string naam)
         {
             var client = _clientfactory.CreateClient("CampingAPI");
@@ -469,7 +504,6 @@ namespace Orchestrator.ApiConnector
 
             return await response.Content.ReadAsStringAsync();
         }
-
 
         //Updates
         //camping plek
@@ -485,7 +519,6 @@ namespace Orchestrator.ApiConnector
 
             return response.IsSuccessStatusCode;
         }
-
         public async Task<bool> UpdateHotelKamer(int roomNumber, JsonObject hotelData)
         {
             var client = _clientfactory.CreateClient("HotelAPI");
@@ -500,7 +533,6 @@ namespace Orchestrator.ApiConnector
             var response = await client.PutAsJsonAsync($"gite/put/{giteNumber}", gitedata);
             return response.IsSuccessStatusCode;
         }
-
 
         // Delete reservering
         public async Task<bool> DeleteReservering(int id)
