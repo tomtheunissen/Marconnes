@@ -40,7 +40,7 @@ namespace Orchestrator.Controllers
             return Ok(data);
         }
 
-        [HttpGet("Search")]
+        [HttpGet("Search/accommodatie")]
         public async Task<IActionResult> GetSearch([FromQuery] int zoekterm)
         {
             var hotelSearch = await _service.GetHotelData(zoekterm);
