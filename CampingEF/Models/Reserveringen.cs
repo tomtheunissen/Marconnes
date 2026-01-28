@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CampingEF.Models;
 
@@ -13,6 +14,7 @@ public partial class Reserveringen
     public int Volwassenen { get; set; }
     public int? Kinderen07 { get; set; }
     public int? Kinderen712 { get; set; }
+    [JsonPropertyName("TotaalPrijs")]
     public decimal? TotaalPrijs { get; set; }
 
     public virtual CampingPlace? AccomodatieNavigation { get; set; }

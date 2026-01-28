@@ -261,7 +261,8 @@ namespace Orchestrator.ApiConnector
                 Einddatum = eindStr,
                 Volwassenen = (int?)(GetCaseInsensitive(json, "Volwassenen")) ?? 0,
                 Kinderen07 = (int?)(GetCaseInsensitive(json, "Kinderen07")) ?? 0,
-                Kinderen712 = (int?)(GetCaseInsensitive(json, "Kinderen712")) ?? 0
+                Kinderen712 = (int?)(GetCaseInsensitive(json, "Kinderen712")) ?? 0,
+                TotaalPrijs = totaalPrijs
             };
 
             var response = await campingClient.PostAsJsonAsync("api/Data/add/reservering", payloadObject);
@@ -451,35 +452,36 @@ namespace Orchestrator.ApiConnector
         }
 
         // Prijs berekenen
-        private decimal BerekenTotaalPrijs(int plekNr, DateOnly start, DateOnly eind, int volw, int k07, int k712)
+        // De parameters heten nu exact zoals de kolommen in je database tabel
+        private decimal BerekenTotaalPrijs(int Accomodatie, DateOnly begindatum, DateOnly einddatum, int volwassenen, int kinderen07, int kinderen712)
         {
-            int nachten = (eind.DayNumber - start.DayNumber);
+            // Bereken aantal nachten
+            int nachten = (einddatum.DayNumber - begindatum.DayNumber);
             if (nachten < 1) nachten = 1;
 
             decimal totaal = 0;
 
-            // LOGICA VOOR CAMPING (Nummers 200 en hoger)
-            if (plekNr >= 200)
+            // LOGICA VOOR CAMPING (Accommodatie nummers 200 en hoger)
+            if (Accomodatie >= 200)
             {
                 decimal prijsPerNacht = 7.50m; // Plaats
-                prijsPerNacht += (volw * 6.00m);
-                prijsPerNacht += (k07 * 4.00m);
-                prijsPerNacht += (k712 * 5.00m);
-                prijsPerNacht += 7.50m; // Stroom (Vast bedrag per nacht volgens screenshot)
+                prijsPerNacht += (volwassenen * 6.00m);
+                prijsPerNacht += (kinderen07 * 4.00m);
+                prijsPerNacht += (kinderen712 * 5.00m);
+                prijsPerNacht += 7.50m; // Stroom
 
                 // Toeristenbelasting Camping
-                int aantalPersonen = volw + k07 + k712;
+                int aantalPersonen = volwassenen + kinderen07 + kinderen712;
                 prijsPerNacht += (aantalPersonen * _toeristenBelastingCamping);
 
                 totaal = prijsPerNacht * nachten;
             }
-            // LOGICA VOOR HOTEL (Nummers lager dan 200)
+            // LOGICA VOOR HOTEL (Accommodatie nummers lager dan 200)
             else
             {
-                int totaalPersonen = volw + k07 + k712;
+                int totaalPersonen = volwassenen + kinderen07 + kinderen712;
                 decimal kamerPrijs = 55.00m; // Fallback prijs
 
-                // Prijzen uit je screenshot "Tarieven"
                 switch (totaalPersonen)
                 {
                     case 1: kamerPrijs = 42.50m; break;
@@ -491,8 +493,8 @@ namespace Orchestrator.ApiConnector
 
                 decimal basisBedrag = kamerPrijs * nachten;
 
-                // BTW BEREKENING (Variabel via de instelling bovenaan)
-                decimal btwFactor = 1 + (_btwPercentageHotel / 100m); // Wordt 1.09
+                // BTW BEREKENING
+                decimal btwFactor = 1 + (_btwPercentageHotel / 100m);
                 decimal bedragMetBtw = basisBedrag * btwFactor;
 
                 // Toeristenbelasting Hotel
@@ -501,7 +503,7 @@ namespace Orchestrator.ApiConnector
                 totaal = bedragMetBtw + toeristenBelasting;
             }
 
-            return Math.Round(totaal, 2); // Afronden op 2 decimalen
+            return Math.Round(totaal, 2);
         }
     }
 }
