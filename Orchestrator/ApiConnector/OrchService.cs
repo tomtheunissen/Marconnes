@@ -499,7 +499,6 @@ namespace Orchestrator.ApiConnector
 
                 // Toeristenbelasting Hotel
                 decimal toeristenBelasting = (totaalPersonen * _toeristenBelastingHotel) * nachten;
-
                 totaal = bedragMetBtw + toeristenBelasting;
             }
 
