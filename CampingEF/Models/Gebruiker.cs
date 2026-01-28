@@ -11,7 +11,7 @@ public partial class Gebruiker
 
     public string Email { get; set; } = null!;
 
-    public int? Telefoonnummer { get; set; }
+    public string? Telefoonnummer { get; set; }
 
     public virtual ICollection<Reserveringen> Reserveringens { get; set; } = new List<Reserveringen>();
 }

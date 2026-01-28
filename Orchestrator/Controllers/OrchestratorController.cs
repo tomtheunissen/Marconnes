@@ -200,7 +200,7 @@ namespace Orchestrator.Controllers
         {
             public string Naam { get; set; }
             public string Email { get; set; }
-            public int Telefoonnummer { get; set; }
+            public string Telefoonnummer { get; set; }
             public string? Adres { get; set; }
         }
 
