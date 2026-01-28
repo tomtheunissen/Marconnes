@@ -333,7 +333,7 @@ namespace Orchestrator.ApiConnector
                 if (resp.IsSuccessStatusCode) plekBestaat = true;
             }
 
-            // stop als plek niet bestaat
+            // foutmelding als plek niet bestaat
             if (!plekBestaat)
             {
                 Console.WriteLine($"[FOUT] Accommodatie {accommodatieNummer} niet gevonden bij de bron.");
