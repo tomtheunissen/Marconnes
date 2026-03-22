@@ -240,42 +240,18 @@ namespace Orchestrator.Controllers
         public class GiteKamerInput
         {
             public int GiteNumber { get; set; }
-            public decimal GitePrice { get; set; }
-            public bool IsAvailable { get; set; }
-            public string GiteAddress { get; set; }
-            public int CapacityMin { get; set; }
-            public int CapacityMax { get; set; }
-
-            public GiteAmenities Amenities { get; set; }
-            public List<GiteBed> Beds { get; set; }
-        }
-
-        public class GiteAmenities
-        {
-            public bool Wifi { get; set; }
-            public bool Bath { get; set; }
-            public bool Shower { get; set; }
-            public bool HairDryer { get; set; }
-            public bool SmallChild { get; set; }
-            public bool Toiletries { get; set; }
-            public bool Desk { get; set; }
-            public bool Chair { get; set; }
-            public bool Balcony { get; set; }
-            public bool Sofa { get; set; }
-            public bool SofaBed { get; set; }
-            public bool MiniFridge { get; set; }
-            public bool Kettle { get; set; }
-            public bool Cuttlery { get; set; }
-            public bool EatingArea { get; set; }
-            public bool RoomService { get; set; }
-        }
-
-        public class GiteBed
-        {
-            public int Amount1PrBed { get; set; }
-            public int Amount2PrBed { get; set; }
-            public int Amount3PrBed { get; set; }
-            public string BedSort { get; set; }
+            public int MaxGuests { get; set; }
+            public decimal Price { get; set; }
+            public int? NumberOfBedrooms { get; set; }
+            public int? NumberOfBathrooms { get; set; }
+            public bool? HasLivingRoom { get; set; }
+            public bool? HasKitchen { get; set; }
+            public bool? HasTerrace { get; set; }
+            public bool? HasPoolAcces { get; set; }
+            public bool? HasSaunaAcces { get; set; }
+            public bool? BreakfastAvailable { get; set; }
+            public bool? HasWifi { get; set; }
+            public bool? ArePetsAllowed { get; set; }
         }
     }
 }

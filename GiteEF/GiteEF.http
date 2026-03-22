@@ -1,0 +1,6 @@
+@GiteEF_HostAddress = http://localhost:5106
+
+GET {{GiteEF_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

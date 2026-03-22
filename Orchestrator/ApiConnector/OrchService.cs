@@ -30,7 +30,7 @@ namespace Orchestrator.ApiConnector
             var campingClient = _clientfactory.CreateClient("CampingAPI");
 
             // hotel kamers ophalen
-            var hotelResponse = await hotelClient.GetAsync("api/HotelRoom");
+            var hotelResponse = await hotelClient.GetAsync("api/HotelRoom/all");
             if (!hotelResponse.IsSuccessStatusCode) return "[]";
             var kamers = await hotelResponse.Content.ReadFromJsonAsync<JsonArray>();
 
@@ -106,7 +106,7 @@ namespace Orchestrator.ApiConnector
         public async Task<string> GetGiteData()
         {
             var client = _clientfactory.CreateClient("GiteAPI");
-            var response = await client.GetAsync("gite/get/all");
+            var response = await client.GetAsync("api/Gites/all_gites");
             return await response.Content.ReadAsStringAsync();
         }
 
@@ -117,11 +117,11 @@ namespace Orchestrator.ApiConnector
         public async Task<string> GetHotelData(int? zoekterm = null)
         {
             var client = _clientfactory.CreateClient("HotelAPI");
-            string url = "api/HotelRoom";
+            string url = "api/HotelRoom/all";
 
             if (zoekterm.HasValue)
             {
-                url += $"/{zoekterm}";
+                url = $"api/HotelRoom/search/{zoekterm}";
             }
 
             var response = await client.GetAsync(url);
@@ -133,6 +133,7 @@ namespace Orchestrator.ApiConnector
 
             return await response.Content.ReadAsStringAsync();
         }
+
         public async Task<string> GetCampingData(int? zoekterm = null)
         {
             var client = _clientfactory.CreateClient("CampingAPI");
@@ -155,10 +156,10 @@ namespace Orchestrator.ApiConnector
         public async Task<string> GetGiteData(int? zoekterm = null)
         {
             var client = _clientfactory.CreateClient("GiteAPI");
-            string url = "gite/get/all";
+            string url = "api/Gites/all_gites";
             if (zoekterm.HasValue)
             {
-                url = $"gite/get/{zoekterm}";
+                url = $"api/Gites/{zoekterm}";
             }
             var response = await client.GetAsync(url);
             if (!response.IsSuccessStatusCode)
@@ -248,7 +249,7 @@ namespace Orchestrator.ApiConnector
                 var hotelClient = _clientfactory.CreateClient("HotelAPI");
 
                 // Check kamer bestaat
-                var resp = await hotelClient.GetAsync($"api/HotelRoom/{accommodatieNummer}");
+                var resp = await hotelClient.GetAsync($"api/HotelRoom/search/{accommodatieNummer}");
 
                 if (resp.IsSuccessStatusCode)
                 {
@@ -329,7 +330,7 @@ namespace Orchestrator.ApiConnector
             else
             {
                 var giteClient = _clientfactory.CreateClient("GiteAPI");
-                var resp = await giteClient.GetAsync($"gite/get/{accommodatieNummer}");
+                var resp = await giteClient.GetAsync($"api/Gites/{accommodatieNummer}");
                 if (resp.IsSuccessStatusCode) plekBestaat = true;
             }
 
@@ -519,18 +520,23 @@ namespace Orchestrator.ApiConnector
 
             return response.IsSuccessStatusCode;
         }
+
         public async Task<bool> UpdateHotelKamer(int roomNumber, JsonObject hotelData)
         {
             var client = _clientfactory.CreateClient("HotelAPI");
+
             hotelData["RoomNumber"] = roomNumber;
-            var response = await client.PutAsJsonAsync($"api/HotelRoom/{roomNumber}", hotelData);
+
+            var response = await client.PutAsJsonAsync($"api/HotelRoom/update/{roomNumber}", hotelData);
+
             return response.IsSuccessStatusCode;
         }
+
         public async Task<bool> UpdateGiteKamer(int giteNumber, JsonObject gitedata)
         {
             var client = _clientfactory.CreateClient("GiteAPI");
-            gitedata["giteNumber"] = giteNumber;
-            var response = await client.PutAsJsonAsync($"gite/put/{giteNumber}", gitedata);
+            gitedata["GiteNumber"] = giteNumber;
+            var response = await client.PutAsJsonAsync($"api/Gites/{giteNumber}", gitedata);
             return response.IsSuccessStatusCode;
         }
 

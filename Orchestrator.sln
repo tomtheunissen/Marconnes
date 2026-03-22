@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36705.20 d17.14
+VisualStudioVersion = 17.14.36705.20
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestrator", "Orchestrator\Orchestrator.csproj", "{A8DB167E-9B9E-43BF-A73E-AC33EB829DE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CampingEF", "CampingEF\CampingEF.csproj", "{8D1F6554-E114-9B90-A058-58D5855D3D7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hotel.Api", "Marconnes.Api\hotel.Api.csproj", "{F5FEAD2E-6393-7217-C78E-25BBBC6B95F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GiteEF", "GiteEF\GiteEF\GiteEF.csproj", "{6C66DC8D-05FA-61AB-F040-3228D66B9205}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{A8DB167E-9B9E-43BF-A73E-AC33EB829DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A8DB167E-9B9E-43BF-A73E-AC33EB829DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A8DB167E-9B9E-43BF-A73E-AC33EB829DE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D1F6554-E114-9B90-A058-58D5855D3D7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D1F6554-E114-9B90-A058-58D5855D3D7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D1F6554-E114-9B90-A058-58D5855D3D7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D1F6554-E114-9B90-A058-58D5855D3D7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5FEAD2E-6393-7217-C78E-25BBBC6B95F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5FEAD2E-6393-7217-C78E-25BBBC6B95F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5FEAD2E-6393-7217-C78E-25BBBC6B95F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5FEAD2E-6393-7217-C78E-25BBBC6B95F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace CampingEF.Models;
+namespace GiteEF.Models;
 
 public partial class MarconnesDbContext : DbContext
 {
@@ -19,15 +19,15 @@ public partial class MarconnesDbContext : DbContext
 
     public virtual DbSet<Gebruiker> Gebruikers { get; set; }
 
+    public virtual DbSet<Gite> Gites { get; set; }
+
+    public virtual DbSet<HotelRoom> HotelRooms { get; set; }
+
     public virtual DbSet<Reserveringen> Reserveringens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=marconnes-db;Integrated Security=True;TrustServerCertificate=True;");
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=localhost;Database=marconnes-db;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,9 +35,7 @@ public partial class MarconnesDbContext : DbContext
         {
             entity.HasKey(e => e.PlaceNumber);
 
-            entity.Property(e => e.PlaceNumber).ValueGeneratedNever();
             entity.Property(e => e.GroundType).HasMaxLength(50);
-            entity.Property(e => e.MaxGuests).ValueGeneratedOnAdd();
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
         });
 
@@ -47,9 +45,21 @@ public partial class MarconnesDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(50);
             entity.Property(e => e.Naam).HasMaxLength(50);
             entity.Property(e => e.Telefoonnummer).HasMaxLength(50);
-
         });
 
+        modelBuilder.Entity<Gite>(entity =>
+        {
+            entity.HasKey(e => e.GiteNumber);
+
+            entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
+        });
+
+        modelBuilder.Entity<HotelRoom>(entity =>
+        {
+            entity.HasKey(e => e.RoomNumber);
+
+            entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
+        });
 
         modelBuilder.Entity<Reserveringen>(entity =>
         {
@@ -63,15 +73,8 @@ public partial class MarconnesDbContext : DbContext
             entity.Property(e => e.GebruikerId).HasColumnName("gebruiker_id");
             entity.Property(e => e.Kinderen07).HasColumnName("kinderen07");
             entity.Property(e => e.Kinderen712).HasColumnName("kinderen712");
+            entity.Property(e => e.TotaalPrijs).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Volwassenen).HasColumnName("volwassenen");
-            entity.Property(e => e.TotaalPrijs)
-          .HasColumnName("TotaalPrijs")
-          .HasColumnType("decimal(10, 2)");
-
-            entity.HasOne(d => d.AccomodatieNavigation).WithMany(p => p.Reserveringens)
-                .HasForeignKey(d => d.Accomodatie)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Reserveringen_Reserveringen");
 
             entity.HasOne(d => d.Gebruiker).WithMany(p => p.Reserveringens)
                 .HasForeignKey(d => d.GebruikerId)

@@ -22,15 +22,15 @@ namespace Orchestrator
             // Add http API Camping & Hotel
             builder.Services.AddHttpClient("HotelAPI", client =>
             {
-                client.BaseAddress = new Uri("https://marconnesapi-bbezaba2hph7asad.westeurope-01.azurewebsites.net/");
+                client.BaseAddress = new Uri("https://localhost:7164/");
             });
             builder.Services.AddHttpClient("CampingAPI", client =>
             {
-                client.BaseAddress = new Uri("https://campingef-api-bnfxe6egdfhac5ck.westeurope-01.azurewebsites.net/");
+                client.BaseAddress = new Uri("https://localhost:7022/");
             });
             builder.Services.AddHttpClient("GiteAPI", client =>
             {
-                client.BaseAddress = new Uri("https://gite-api-01-c5b5fhb0ddadb9d6.westeurope-01.azurewebsites.net/");
+                client.BaseAddress = new Uri("https://localhost:7198");
             });
 
             // Dependancy Injection
