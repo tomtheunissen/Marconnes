@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hotel.Api", "Marconnes.Api\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GiteEF", "GiteEF\GiteEF\GiteEF.csproj", "{6C66DC8D-05FA-61AB-F040-3228D66B9205}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marconnes.ClassLibrary", "Marconnes.ClassLibrary\Marconnes.ClassLibrary.csproj", "{9B368F25-7352-85CA-77AE-BEF824ABADAF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C66DC8D-05FA-61AB-F040-3228D66B9205}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B368F25-7352-85CA-77AE-BEF824ABADAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B368F25-7352-85CA-77AE-BEF824ABADAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B368F25-7352-85CA-77AE-BEF824ABADAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B368F25-7352-85CA-77AE-BEF824ABADAF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

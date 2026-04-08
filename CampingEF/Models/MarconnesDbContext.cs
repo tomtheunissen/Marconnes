@@ -21,14 +21,6 @@ public partial class MarconnesDbContext : DbContext
 
     public virtual DbSet<Reserveringen> Reserveringens { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=marconnes-db;Integrated Security=True;TrustServerCertificate=True;");
-        }
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CampingPlace>(entity =>
